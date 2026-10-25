@@ -1,5 +1,7 @@
 {
   "alwaysUpdateLinks": true,
   "livePreview": true,
-  "showLineNumber": false
+  "showLineNumber": false,
+  "settingsPopoutWindow": false,
+  "promptDelete": false
 }
