@@ -71,8 +71,8 @@ npm run build
 Push a tag that matches `version` in `manifest.json`. Leave off the `v` prefix.
 
 ```bash
-git tag 0.1.0
-git push origin 0.1.0
+git tag 0.2.0
+git push origin 0.2.0
 ```
 
 ## License
