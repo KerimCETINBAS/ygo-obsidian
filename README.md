@@ -4,6 +4,8 @@ An Obsidian plugin. A combo is a step list on the left and a board you stage by 
 
 Used cards are written into the `cards` folder as `Card Name.md` and `Card Name.png`. The passcode is only the first lookup. After that, pictures and tooltips are read from those files.
 
+The human reference is [docs](docs/README.md). Frame types and their fields are listed in [docs/frames.md](docs/frames.md). [AI.md](AI.md) is the same material arranged for an agent.
+
 ## Syntax
 
 A deck is YDK text:
