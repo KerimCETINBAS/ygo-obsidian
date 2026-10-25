@@ -143,7 +143,7 @@ type CmView = {
 
 function cardLinkTarget(plugin: YgoComboPlugin, target: EventTarget | null): { el: HTMLElement; name: string } | null {
   const host = target instanceof HTMLElement ? target : target instanceof Element ? target.parentElement : null;
-  if (!(host instanceof HTMLElement) || host.closest(".ygo-card-tip, .ygo-host, .ygo-deck, .ygo-deck-host")) return null;
+  if (!(host instanceof HTMLElement) || host.closest(".ygo-card-tip, .ygo-host, .ygo-deck, .ygo-deck-host, .ygo-field-host, .ygo-grid, .ygo-grid-host")) return null;
   const rendered = host.closest("a.internal-link, [data-href], .cm-hmd-internal-link, .internal-embed, .cm-hmd-embed");
   if (rendered instanceof HTMLElement) {
     const raw = rendered.getAttribute("data-href") || rendered.getAttribute("href") || rendered.getAttribute("src") || "";

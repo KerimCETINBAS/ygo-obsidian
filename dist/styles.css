@@ -508,6 +508,92 @@
 .ygo-combo.is-compact:not(.is-board):not(.is-tab-board) .ygo-preview { display: none; }
 .ygo-combo.is-compact:not(.is-board).is-tab-board .ygo-list { display: none; }
 
+.ygo-field {
+  --ygo-bg: var(--background-primary, #1e1e1e);
+  --ygo-text: var(--text-normal, #dcddde);
+  --ygo-muted: var(--text-muted, #9a9a9a);
+  --ygo-faint: var(--text-faint, #777);
+  --ygo-line: var(--background-modifier-border, rgba(255, 255, 255, 0.16));
+  --ygo-hover: var(--background-modifier-hover, rgba(255, 255, 255, 0.06));
+  --ygo-accent: var(--interactive-accent, #7f6df2);
+  --ygo-gap: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+
+.ygo-field .ygo-board-host {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.ygo-grid-host {
+  white-space: normal;
+  color: var(--text-normal, #dcddde);
+}
+
+.ygo-grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.ygo-grid-empty {
+  margin: 0;
+  color: var(--text-faint, #777);
+  font-size: 12px;
+}
+
+.ygo-grid-host button.ygo-grid-card {
+  position: relative;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 59 / 86;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  box-shadow: none;
+  background: var(--background-modifier-hover, rgba(255, 255, 255, 0.06));
+  color: inherit;
+  cursor: default;
+}
+
+.ygo-grid-host button.ygo-grid-card.is-hover {
+  outline: 2px solid var(--interactive-accent, #7f6df2);
+  outline-offset: 0;
+}
+
+.ygo-grid-card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ygo-grid-name {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  font-size: 10px;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.ygo-grid-card.has-image .ygo-grid-name { display: none; }
+
 .ygo-deck-host {
   white-space: normal;
   color: var(--text-normal, #dcddde);

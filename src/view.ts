@@ -300,6 +300,53 @@ export function mountCombo(
   }
 }
 
+export function mountBoard(
+  root: HTMLElement,
+  picture: BoardPicture,
+  layout: "own" | "versus",
+  lookup?: CardLookup,
+  hover?: CardHover,
+): { destroy(): void } {
+  const rows = layout === "versus" ? VERSUS_ROWS : OWN_ROWS;
+  let destroyed = false;
+
+  root.replaceChildren();
+  root.classList.add("ygo-host", "ygo-field-host");
+  const stage = el("div", layout === "versus" ? "ygo-field is-versus" : "ygo-field");
+  const boardHost = el("div", "ygo-board-host");
+  stage.append(boardHost);
+  root.append(stage);
+  boardHost.replaceChildren(drawBoard(picture, rows, lookup));
+  if (hover) watchCardHover(root, hover);
+
+  const fit = () => {
+    if (destroyed) return;
+    const board = boardHost.querySelector(".ygo-board");
+    if (!(board instanceof HTMLElement)) return;
+    const gap = readGap(board);
+    const columns = 7;
+    const rowCount = rows.length;
+    const availW = stage.clientWidth;
+    const availH = stage.clientHeight;
+    if (availW < 16 || availH < 16) return;
+    const fromWidth = (availW - gap * (columns - 1)) / columns;
+    const fromHeight = (availH - gap * (rowCount - 1)) / rowCount / (86 / 59);
+    const card = Math.max(12, Math.min(fromWidth, fromHeight));
+    board.style.width = `${Math.floor(card * columns + gap * (columns - 1))}px`;
+    root.style.setProperty("--ygo-card", `${Math.floor(card)}px`);
+  };
+  const observer = new ResizeObserver(() => fit());
+  observer.observe(stage);
+  requestAnimationFrame(fit);
+
+  return {
+    destroy() {
+      destroyed = true;
+      observer.disconnect();
+    },
+  };
+}
+
 function readGap(board: HTMLElement): number {
   const gap = parseFloat(getComputedStyle(board).columnGap);
   return Number.isFinite(gap) ? gap : 6;

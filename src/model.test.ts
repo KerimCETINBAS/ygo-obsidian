@@ -1,7 +1,7 @@
 import * as assert from "node:assert/strict";
 import { cardFileBase, cardLinkAt, cardLinkLabel, cardTrigger, completedCardNames, fromApi, parseCardNote, renderCardNote, searchCards } from "./card-record";
 import { parseYdk } from "./deck";
-import { layoutOf, parseCombo, resolvePictures, slotCard } from "./model";
+import { layoutOf, parseBoard, parseCardNames, parseCombo, resolvePictures, slotCard } from "./model";
 import { SAMPLE_SOURCE, VERSUS_SOURCE } from "./sample";
 
 const parsed = parseCombo(SAMPLE_SOURCE);
@@ -146,5 +146,31 @@ assert.equal(slotCard(markedPictures[0], "m3")?.glow, "glow4");
 assert.equal(slotCard(markedPictures[0], "emzL")?.glow, "glow2");
 assert.equal(slotCard(markedPictures[1], "m3")?.glow, null);
 assert.equal(slotCard(markedPictures[1], "emzL")?.glow, null);
+
+const board = parseBoard(`
+board: own
+glow1:
+  - emzL
+glow2:
+  - m3
+cards:
+  emzL: [[Sunavalon Dryas]]
+  m3: [[Sunseed Genius Loci]]
+`);
+assert.equal(board.ok, true);
+if (!board.ok) throw new Error("board failed");
+assert.equal(board.doc.layout, "own");
+assert.equal(slotCard(board.doc.picture, "emzL")?.name, "Sunavalon Dryas");
+assert.equal(slotCard(board.doc.picture, "emzL")?.glow, "glow1");
+assert.equal(slotCard(board.doc.picture, "m3")?.glow, "glow2");
+assert.equal(parseBoard("steps:\n  - say: No").ok, false);
+const versusBoard = parseBoard("cards:\n  oppM1: [[Ash Blossom & Joyous Spring]]");
+assert.equal(versusBoard.ok, true);
+if (!versusBoard.ok) throw new Error("versus board failed");
+assert.equal(versusBoard.doc.layout, "versus");
+assert.deepEqual(parseCardNames("[Sunseed Genius Loci]\n[[Sunavalon Dryas]]\n# skip\n\n[Sunvine Thrasher]"), [
+  "Sunseed Genius Loci",
+  "Sunvine Thrasher",
+]);
 
 console.log("model tests passed");

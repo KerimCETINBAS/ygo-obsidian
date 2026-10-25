@@ -4,9 +4,10 @@ import { CardStore } from "./card-store";
 import { CardNameSuggest } from "./card-suggest";
 import { CardTip, registerCardViews } from "./card-view";
 import { mountDeck } from "./deck";
-import { parseCombo } from "./model";
-import { DECK_SOURCE, SAMPLE_SOURCE } from "./sample";
-import { mountCombo, type ComboController } from "./view";
+import { mountGrid } from "./grid";
+import { parseBoard, parseCardNames, parseCombo } from "./model";
+import { BOARD_SOURCE, CARDS_SOURCE, DECK_SOURCE, SAMPLE_SOURCE } from "./sample";
+import { mountBoard, mountCombo, type ComboController } from "./view";
 import type { StoredCard } from "./card-record";
 
 const DEFAULT_CARDS_FOLDER = "cards";
@@ -44,6 +45,14 @@ export default class YgoComboPlugin extends Plugin {
       context.addChild(new DeckBlock(element, source, this));
     });
 
+    this.registerMarkdownCodeBlockProcessor("ygo-board", (source, element, context) => {
+      context.addChild(new BoardBlock(element, source, this));
+    });
+
+    this.registerMarkdownCodeBlockProcessor("ygo-cards", (source, element, context) => {
+      context.addChild(new CardsBlock(element, source, this));
+    });
+
     this.registerEvent(
       this.app.workspace.on("editor-change", (editor, info) => {
         const line = editor.getLine(editor.getCursor().line);
@@ -70,6 +79,22 @@ export default class YgoComboPlugin extends Plugin {
       name: "Insert deck",
       editorCallback: (editor) => {
         editor.replaceSelection(`\`\`\`ygo-deck\n${DECK_SOURCE}\`\`\`\n`);
+      },
+    });
+
+    this.addCommand({
+      id: "insert-ygo-board",
+      name: "Insert board",
+      editorCallback: (editor) => {
+        editor.replaceSelection(`\`\`\`ygo-board\n${BOARD_SOURCE}\`\`\`\n`);
+      },
+    });
+
+    this.addCommand({
+      id: "insert-ygo-cards",
+      name: "Insert cards",
+      editorCallback: (editor) => {
+        editor.replaceSelection(`\`\`\`ygo-cards\n${CARDS_SOURCE}\`\`\`\n`);
       },
     });
   }
@@ -189,6 +214,90 @@ class YgoSettingTab extends PluginSettingTab {
             await this.plugin.store.load();
           }),
       );
+  }
+}
+
+class BoardBlock extends MarkdownRenderChild {
+  private view: { destroy(): void } | null = null;
+  private alive = false;
+  private readonly pending = new Set<string>();
+
+  constructor(
+    containerEl: HTMLElement,
+    private readonly source: string,
+    private readonly plugin: YgoComboPlugin,
+  ) {
+    super(containerEl);
+  }
+
+  onload() {
+    this.alive = true;
+    this.render();
+  }
+
+  onunload() {
+    this.alive = false;
+    this.view?.destroy();
+    this.view = null;
+  }
+
+  private render() {
+    this.view?.destroy();
+    this.view = null;
+    const parsed = parseBoard(this.source);
+    this.containerEl.empty();
+    if (!parsed.ok) {
+      this.containerEl.createDiv({ cls: "ygo-error", text: parsed.error });
+      return;
+    }
+    this.view = mountBoard(this.containerEl, parsed.doc.picture, parsed.doc.layout, (name) => this.art(name), {
+      show: (anchor, name) => {
+        this.plugin.showCard(anchor, null, name);
+        void this.plugin.store.ensureExact(name).then((card) => {
+          if (this.plugin.tip.anchor === anchor) this.plugin.showCard(anchor, card, card?.name || name);
+        });
+      },
+      hide: (anchor) => this.plugin.hideCard(anchor),
+    });
+  }
+
+  private art(name: string): string | null {
+    const known = this.plugin.artFor(name);
+    const key = name.trim().toLowerCase();
+    if (!this.plugin.store.find(name) && !this.pending.has(key)) {
+      this.pending.add(key);
+      void this.plugin.store.ensureExact(name).then((card) => {
+        this.pending.delete(key);
+        if (card && this.alive) this.render();
+      });
+    }
+    return known;
+  }
+}
+
+class CardsBlock extends MarkdownRenderChild {
+  private view: { destroy(): void } | null = null;
+
+  constructor(
+    containerEl: HTMLElement,
+    private readonly source: string,
+    private readonly plugin: YgoComboPlugin,
+  ) {
+    super(containerEl);
+  }
+
+  onload() {
+    this.view = mountGrid(
+      this.containerEl,
+      parseCardNames(this.source),
+      (name) => this.plugin.store.ensureExact(name),
+      this.plugin.tip,
+    );
+  }
+
+  onunload() {
+    this.view?.destroy();
+    this.view = null;
   }
 }
 

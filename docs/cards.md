@@ -21,6 +21,20 @@ The block shows three rows: Main, Extra, and Side. An empty row says **Empty**. 
 
 The passcode is only used to find the card the first time. The picture and the tooltip then come from `cards/Card Name.md` and `cards/Card Name.png`.
 
+## A row of cards
+
+`ygo-cards` is not a deck. It does not read passcodes. Each line is `[Card Name]`. The brackets are single, so the line is not an Obsidian note link. `[[Card Name]]` still belongs in the note, outside this fence. The widget places the names in 8 columns and starts another row when a row is full.
+
+````md
+```ygo-cards
+[Sunseed Genius Loci]
+[Sunavalon Dryas]
+[Sunvine Thrasher]
+```
+````
+
+**Insert cards** pastes a short sample. Hover a card for its effect. The first time a name is shown, the plugin saves that card into the card folder.
+
 ## In a sentence
 
 `[[Sunseed Genius Loci]]` is the card note. `![[Sunseed Genius Loci.png]]` is the picture. Write the `.png` when you want the image. `![[Card#image]]` is not a picture embed.

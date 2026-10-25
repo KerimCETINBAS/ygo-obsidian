@@ -1,5 +1,21 @@
 # Board
 
+## A board by itself
+
+`ygo-board` draws one board and nothing else. Put `cards` and any `glow` lists at the top. The zone names and glow colors are the same as in a combo. There is no `steps` list, so a zone you leave out stays empty.
+
+````md
+```ygo-board
+board: own
+glow2:
+  - m3
+cards:
+  m3: [[Sunseed Genius Loci]]
+  hand:
+    - [[Sunvine Sowing]]
+```
+````
+
 Our field is drawn in this order. An empty slot shows the zone name you write in the combo, with the same letters: `emzL`, `m1`, `st1`, `gy`, `oppHand`.
 
 | | | | | | | |

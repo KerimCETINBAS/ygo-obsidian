@@ -1,3 +1,16 @@
+export const BOARD_SOURCE = `board: own
+glow1:
+  - emzL
+cards:
+  emzL: [[Sunavalon Dryas]]
+  m3: [[Sunseed Genius Loci]]
+`;
+
+export const CARDS_SOURCE = `[Sunseed Genius Loci]
+[Sunavalon Dryas]
+[Sunvine Thrasher]
+`;
+
 export const DECK_SOURCE = `#created by ComboBuilder
 #main
 27520594

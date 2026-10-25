@@ -17,10 +17,39 @@ Show the vault in this order.
 1. Open `example` as an Obsidian vault and enable Yu-Gi-Oh Combo Builder.
 2. Open [[Deck]]. The fence is `ygo-deck`. Each line is a passcode. Sections are `#main`, `#extra`, and `#side`.
 3. Open [[Opening]]. The fence is `ygo-combo`. The left side is the step list. The right side is the board for the selected step.
-4. Open [[Cards]]. `[[Card Name]]` opens the card note. `![[Card Name.png]]` is only the picture.
+4. Open [[Cards]]. `[[Card Name]]` opens the card note. `![[Card Name.png]]` is only the picture. `ygo-board` is a board with no steps. `ygo-cards` is an 8-column grid of `[Card Name]` lines.
 5. The command **Insert combo** pastes a short sample. **Insert deck** pastes a short deck. The setting **Card folder** defaults to `cards`.
 
 The widget has three board sizes: **Small**, **Large**, and **Full**. Small keeps a small board beside the steps. Large gives the board most of the widget. Full hides the step list and gives the board the whole widget. The buttons are at the top of the board. Escape leaves Full and returns to Small. Below 640px, Small and Large become **Steps** and **Board** tabs. While the cursor is inside a fence, Live Preview hides the widget and shows the source.
+
+### write-board
+
+Input: one board position, with no sequence.
+
+Output: one `ygo-board` fence. Do not add `steps`, `say`, or `frames`. `cards` places the cards. `glow`, `glow1`, `glow2`, `glow3`, and `glow4` light them. `glow1` is an effect, `glow2` a target, `glow3` a summon, and `glow4` a tribute. Omit `board`, or set `own` or `versus`.
+
+````md
+```ygo-board
+glow1:
+  - emzL
+cards:
+  emzL: [[Sunavalon Dryas]]
+  m3: [[Sunseed Genius Loci]]
+```
+````
+
+### write-cards
+
+Input: card names, not passcodes.
+
+Output: one `ygo-cards` fence. One `[Card Name]` per line. Use single brackets. `[[Card Name]]` is a note link and is not a row in this fence. The grid is 8 columns wide and adds a row when it needs one. This fence is not a deck.
+
+````md
+```ygo-cards
+[Sunseed Genius Loci]
+[Sunavalon Dryas]
+```
+````
 
 ### write-deck
 

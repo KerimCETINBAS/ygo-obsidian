@@ -181,6 +181,53 @@ export function parseCombo(source: string): Parsed {
   return { ok: true, doc: { name, board, steps } };
 }
 
+export type BoardDoc = {
+  layout: "own" | "versus";
+  picture: BoardPicture;
+};
+
+export function parseBoard(source: string): { ok: true; doc: BoardDoc } | { ok: false; error: string } {
+  const text = source.trim();
+  if (!text) return { ok: true, doc: { layout: "own", picture: emptyPicture() } };
+
+  let raw: unknown;
+  try {
+    raw = parse(quoteCardLinks(text));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Could not read this board.";
+    return { ok: false, error: message };
+  }
+
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return { ok: false, error: "A board block needs a cards map." };
+  }
+
+  const record = raw as Record<string, unknown>;
+  if (record.steps !== undefined) {
+    return { ok: false, error: "A board block places cards directly. It does not use steps." };
+  }
+
+  const picture = emptyPicture();
+  if (record.cards && typeof record.cards === "object" && !Array.isArray(record.cards)) {
+    applyCards(picture, record.cards as Record<string, unknown>);
+  }
+  for (const mark of glowMarks(record, stringList(record.glow))) applyGlow(picture, mark.kind, mark.tokens);
+
+  const layout = record.board === "versus" || record.board === "own" ? record.board : hasOpponentCard(picture) ? "versus" : "own";
+  return { ok: true, doc: { layout, picture } };
+}
+
+export function parseCardNames(source: string): string[] {
+  const names: string[] = [];
+  for (const raw of source.split(/\r?\n/)) {
+    const line = raw.trim();
+    const match = line.match(/^\[([^\[\]]+)\]$/);
+    const name = match?.[1]?.trim() ?? "";
+    if (name) names.push(name);
+  }
+  return names;
+}
+
 export function resolvePictures(steps: Step[]): BoardPicture[] {
   let current = emptyPicture();
   return steps.map((step) => {

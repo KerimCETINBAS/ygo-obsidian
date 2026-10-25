@@ -35,6 +35,10 @@ A deck is YDK text:
 
 Inside a combo, a card is `[[Card Name]]`. Use `![[Card Name.png]]` when you want the picture.
 
+`ygo-board` is the board alone: `cards` places the cards, and `glow` or `glow1` lights them. There are no steps.
+
+`ygo-cards` is a grid of 8 columns. Each line is `[Card Name]`. That is not a note link. `[[Card Name]]` stays a link in the note, outside this fence.
+
 ````md
 ```ygo-combo
 name: Opening
