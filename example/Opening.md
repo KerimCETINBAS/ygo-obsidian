@@ -1,4 +1,4 @@
-# Opening
+
 
 This combo needs [[Sunseed Genius Loci]], or any way to summon it.
 
