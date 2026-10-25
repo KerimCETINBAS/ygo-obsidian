@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Deck widget prototype</title>
+    <style>
+      :root {
+        --bg: #1e1e1e;
+        --text: #dcddde;
+        --muted: #9a9a9a;
+        --faint: #777;
+        --line: rgba(255, 255, 255, 0.16);
+        --hover: rgba(255, 255, 255, 0.06);
+        --accent: #7f6df2;
+        color: var(--text);
+        background: var(--bg);
+        font-family: "Segoe UI", sans-serif;
+      }
+
+      * { box-sizing: border-box; }
+
+      body { margin: 0; background: var(--bg); }
+
+      article {
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 28px 0 64px;
+      }
+
+      h1 { margin: 0 0 8px; font-size: 28px; font-weight: 600; }
+      p { margin: 0 0 14px; color: var(--muted); font-weight: 400; line-height: 1.5; }
+
+      .widget {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--bg);
+        padding: 4px 14px 16px;
+      }
+
+      .group { margin-top: 14px; }
+
+      .group h3 {
+        display: flex;
+        gap: 8px;
+        align-items: baseline;
+        margin: 0 0 8px;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 650;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .group h3 span { color: var(--faint); font-variant-numeric: tabular-nums; }
+
+      .cards {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .empty { margin: 0; color: var(--faint); font-size: 12px; }
+
+      .card {
+        position: relative;
+        width: 74px;
+        aspect-ratio: 59 / 86;
+        overflow: hidden;
+        padding: 0;
+        border: 0;
+        border-radius: 2px;
+        background: var(--hover);
+        color: inherit;
+        cursor: default;
+      }
+
+      .card.is-hover { outline: 2px solid var(--accent); outline-offset: 0; }
+
+      .card img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .card-id {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px;
+        font-size: 10px;
+        line-height: 1.2;
+        text-align: center;
+      }
+
+      .card.has-image .card-id { display: none; }
+
+      .wiki {
+        color: var(--accent);
+        cursor: pointer;
+        text-decoration: none;
+      }
+
+      .wiki.is-hover { text-decoration: underline; }
+
+      .card-tip {
+        position: fixed;
+        z-index: 30;
+        width: min(340px, calc(100vw - 16px));
+        padding: 10px 12px 12px;
+        border: 1px solid var(--line);
+        border-radius: 2px;
+        background: #262626;
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+        pointer-events: auto;
+      }
+
+      .card-tip[hidden] { display: none; }
+
+      .card-tip-name {
+        display: block;
+        margin: 0 0 4px;
+        font-size: 14px;
+        line-height: 1.3;
+      }
+
+      .card-tip-line,
+      .card-tip-stats {
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.4;
+      }
+
+      .card-tip-desc {
+        margin: 8px 0 0;
+        color: var(--text);
+        font-size: 12.5px;
+        font-weight: 400;
+        line-height: 1.45;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <article>
+      <h1>Deck</h1>
+      <p>The preview is cards only. Hover shows the text above the card. The same panel is used for a note link: <span class="wiki" data-name="Sunseed Genius Loci">[[Sunseed Genius Loci]]</span>, <span class="wiki" data-name="Sunavalon Dryas">[[Sunavalon Dryas]]</span>.</p>
+      <div class="widget" id="deck"></div>
+    </article>
+    <div class="card-tip" id="tip" hidden>
+      <strong class="card-tip-name"></strong>
+      <div class="card-tip-line"></div>
+      <div class="card-tip-stats"></div>
+      <p class="card-tip-desc"></p>
+    </div>
+    <script>
+      const SAMPLE = `#created by ComboBuilder
+#main
+27520594
+27520594
+27520594
+66407907
+66407907
+66407907
+53286626
+53286626
+53286626
+14558127
+14558127
+14558127
+14532163
+14532163
+82732705
+82732705
+82732705
+#extra
+93896655
+93896655
+93896655
+91557476
+91557476
+91557476
+#side
+73356503
+73356503
+73356503
+14532163
+`;
+
+      const SECTIONS = [
+        ["main", "Main"],
+        ["extra", "Extra"],
+        ["side", "Side"],
+      ];
+
+      const cache = new Map();
+      const deck = document.getElementById("deck");
+      const tip = document.getElementById("tip");
+      const tipName = tip.querySelector(".card-tip-name");
+      const tipLine = tip.querySelector(".card-tip-line");
+      const tipStats = tip.querySelector(".card-tip-stats");
+      const tipDesc = tip.querySelector(".card-tip-desc");
+      let anchor = null;
+      let hideTimer = 0;
+
+      render(parseYdk(SAMPLE));
+      for (const link of document.querySelectorAll(".wiki")) bindHover(link, () => loadByName(link.dataset.name));
+
+      function parseYdk(source) {
+        const piles = { main: [], extra: [], side: [] };
+        let section = "main";
+        for (const raw of source.split(/\r?\n/)) {
+          const line = raw.trim();
+          if (!line) continue;
+          if (line.startsWith("#") || line.startsWith("!")) {
+            const name = line.slice(1).trim().toLowerCase();
+            if (name === "main" || name === "extra" || name === "side") section = name;
+            continue;
+          }
+          if (/^\d+$/.test(line)) piles[section].push(line);
+        }
+        return piles;
+      }
+
+      function render(piles) {
+        deck.replaceChildren();
+        for (const [key, label] of SECTIONS) {
+          const group = document.createElement("section");
+          group.className = "group";
+          const title = document.createElement("h3");
+          title.textContent = label;
+          const count = document.createElement("span");
+          count.textContent = String(piles[key].length);
+          title.append(count);
+          group.append(title);
+
+          if (!piles[key].length) {
+            const empty = document.createElement("p");
+            empty.className = "empty";
+            empty.textContent = "Empty";
+            group.append(empty);
+          } else {
+            const row = document.createElement("div");
+            row.className = "cards";
+            for (const id of piles[key]) row.append(card(id));
+            group.append(row);
+          }
+          deck.append(group);
+        }
+      }
+
+      function card(id) {
+        const node = document.createElement("button");
+        node.type = "button";
+        node.className = "card";
+        const name = document.createElement("span");
+        name.className = "card-id";
+        name.textContent = id;
+        node.append(name);
+
+        const image = document.createElement("img");
+        image.alt = "";
+        image.addEventListener("load", () => node.classList.add("has-image"));
+        image.addEventListener("error", () => image.remove());
+        image.src = `https://images.ygoprodeck.com/images/cards/${id}.jpg`;
+        node.append(image);
+        bindHover(node, () => loadById(id));
+        return node;
+      }
+
+      function bindHover(node, load) {
+        node.addEventListener("pointerenter", () => {
+          window.clearTimeout(hideTimer);
+          anchor = node;
+          node.classList.add("is-hover");
+          openTip(node);
+          fillTip(null, node.classList.contains("card") ? node.querySelector(".card-id").textContent : node.dataset.name);
+          load().then((info) => {
+            if (anchor === node) fillTip(info, node.dataset.name || "");
+          });
+        });
+        node.addEventListener("pointerleave", () => {
+          node.classList.remove("is-hover");
+          scheduleHide(node);
+        });
+      }
+
+      tip.addEventListener("pointerenter", () => window.clearTimeout(hideTimer));
+      tip.addEventListener("pointerleave", () => scheduleHide(anchor));
+      window.addEventListener("scroll", () => { if (anchor) placeTip(anchor); }, true);
+
+      function scheduleHide(node) {
+        window.clearTimeout(hideTimer);
+        hideTimer = window.setTimeout(() => {
+          if (anchor !== node) return;
+          anchor = null;
+          tip.hidden = true;
+        }, 140);
+      }
+
+      function openTip(node) {
+        tip.hidden = false;
+        placeTip(node);
+      }
+
+      function placeTip(node) {
+        const rect = node.getBoundingClientRect();
+        const width = tip.offsetWidth;
+        const height = tip.offsetHeight;
+        let top = rect.top - height - 8;
+        let left = rect.left + rect.width / 2 - width / 2;
+        if (top < 8) top = rect.bottom + 8;
+        left = Math.max(8, Math.min(left, window.innerWidth - width - 8));
+        tip.style.top = `${top}px`;
+        tip.style.left = `${left}px`;
+      }
+
+      function fillTip(info, fallback) {
+        if (!info) {
+          tipName.textContent = fallback || "…";
+          tipLine.textContent = "";
+          tipStats.textContent = "";
+          tipDesc.textContent = "";
+          if (anchor) placeTip(anchor);
+          return;
+        }
+        tipName.textContent = info.name;
+        tipLine.textContent = typeLine(info);
+        tipStats.textContent = statLine(info);
+        tipDesc.textContent = effectText(info);
+        if (anchor) placeTip(anchor);
+      }
+
+      function typeLine(info) {
+        if (info.type?.includes("Link")) return [info.attribute, info.race, `Link ${info.linkval}`].filter(Boolean).join(" · ");
+        if (info.type?.includes("XYZ")) return [info.attribute, info.race, `Rank ${info.level}`].filter(Boolean).join(" · ");
+        if (info.type?.includes("Monster")) return [info.attribute, info.race, info.level ? `Level ${info.level}` : ""].filter(Boolean).join(" · ");
+        return [info.race, info.type].filter(Boolean).join(" · ");
+      }
+
+      function statLine(info) {
+        if (!info.type?.includes("Monster")) return info.type || "";
+        if (info.type.includes("Link")) return `ATK ${info.atk ?? "?"} · ${info.type}`;
+        return `ATK ${info.atk ?? "?"} / DEF ${info.def ?? "?"} · ${info.type}`;
+      }
+
+      function effectText(info) {
+        const parts = [];
+        if (info.pend_desc) parts.push(info.pend_desc);
+        if (info.monster_desc) parts.push(info.monster_desc);
+        if (!parts.length && info.desc) parts.push(info.desc);
+        return parts.join("\n\n");
+      }
+
+      function loadById(id) {
+        return load(`id:${id}`, `https://db.ygoprodeck.com/api/v7/cardinfo.php?id=${id}`);
+      }
+
+      function loadByName(name) {
+        return load(`name:${name.toLowerCase()}`, `https://db.ygoprodeck.com/api/v7/cardinfo.php?name=${encodeURIComponent(name)}`);
+      }
+
+      function load(key, url) {
+        const cached = cache.get(key);
+        if (cached) return cached;
+        const pending = fetch(url)
+          .then((response) => (response.ok ? response.json() : null))
+          .then((body) => body?.data?.[0] ?? null)
+          .catch(() => null);
+        cache.set(key, pending);
+        return pending;
+      }
+    </script>
+  </body>
+</html>

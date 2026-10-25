@@ -1,0 +1,9 @@
+{
+  "id": "ygo-combo-builder",
+  "name": "Yu-Gi-Oh Combo Builder",
+  "version": "0.1.0",
+  "minAppVersion": "1.5.11",
+  "description": "A combo sequence beside a manually staged board.",
+  "author": "ComboBuilder",
+  "isDesktopOnly": false
+}

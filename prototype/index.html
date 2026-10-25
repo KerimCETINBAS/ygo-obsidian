@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Combo widget prototype</title>
+    <style>
+      :root {
+        --bg: #1e1e1e;
+        --text: #dcddde;
+        --muted: #9a9a9a;
+        --faint: #777;
+        --line: rgba(255, 255, 255, 0.16);
+        --hover: rgba(255, 255, 255, 0.06);
+        --accent: #7f6df2;
+        --gap: 6px;
+        color: var(--text);
+        background: var(--bg);
+        font-family: "Segoe UI", sans-serif;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+      }
+
+      article {
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 28px 0 64px;
+      }
+
+      h1, h2, p { font-weight: 600; }
+      h1 { margin: 0 0 8px; font-size: 28px; }
+      h2 { margin: 36px 0 8px; font-size: 22px; }
+      p { margin: 0 0 14px; color: var(--muted); font-weight: 400; line-height: 1.5; }
+
+      .widget {
+        display: grid;
+        grid-template-columns: minmax(420px, 1.45fr) minmax(240px, 0.7fr);
+        height: 740px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--bg);
+      }
+
+      .widget.is-minimal {
+        grid-template-columns: minmax(230px, 300px) minmax(0, 1fr);
+      }
+
+      .widget.is-board {
+        position: fixed;
+        inset: 16px;
+        z-index: 20;
+        height: auto;
+        grid-template-columns: 1fr;
+        box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.62);
+      }
+
+      .widget.is-board .list { display: none; }
+
+      .widget.is-board .preview { height: 100%; }
+
+      .widget.is-board .stage {
+        display: flex;
+        flex: 1;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .list, .preview { min-width: 0; min-height: 0; }
+
+      .list {
+        overflow-x: hidden;
+        overflow-y: auto;
+        border-right: 1px solid var(--line);
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+      }
+
+      .list::-webkit-scrollbar { width: 8px; }
+      .list::-webkit-scrollbar-track { background: transparent; }
+      .list::-webkit-scrollbar-thumb {
+        border: 2px solid transparent;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.28);
+        background-clip: padding-box;
+      }
+
+      .list h3 {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        margin: 0;
+        padding: 12px 14px 8px;
+        background: var(--bg);
+        font-size: 13px;
+      }
+
+      .step {
+        display: flex;
+        gap: 10px;
+        width: 100%;
+        margin: 0;
+        padding: 10px 12px 10px 10px;
+        border: 0;
+        border-left: 2px solid transparent;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .step:hover, .step.is-active { background: var(--hover); }
+      .step.is-active { border-left-color: var(--accent); }
+
+      .n {
+        flex: 0 0 1.4em;
+        color: var(--faint);
+        font-size: 12px;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.4;
+      }
+
+      .step-body { flex: 1; min-width: 0; }
+      .say, .line { display: block; }
+      .say { font-size: 13.5px; font-weight: 600; line-height: 1.35; }
+      .line { margin-top: 3px; color: var(--muted); font-size: 12px; line-height: 1.4; }
+
+      .frames {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+      }
+
+      .frame {
+        --frame: var(--line);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        width: 78px;
+        padding: 8px 6px 7px;
+        border: 1px solid color-mix(in srgb, var(--frame) 65%, transparent);
+        border-radius: 8px;
+        background: color-mix(in srgb, var(--frame) 12%, transparent);
+        box-shadow: inset 0 3px 0 var(--frame);
+      }
+
+      .frame.is-activate { --frame: #7f6df2; }
+      .frame.is-summon { --frame: #3dba7a; }
+      .frame.is-link { --frame: #2aa8b8; }
+      .frame.is-target { --frame: #e2b340; }
+      .frame.is-chain { --frame: #e08a3c; }
+      .frame.is-banish { --frame: #6aa7ff; }
+      .frame.is-set { --frame: #9aa3b2; }
+      .frame.is-pay { --frame: #e06b6b; }
+      .frame.is-gain { --frame: #8fd16a; }
+      .frame.is-hand { --frame: #8b93a7; }
+      .frame.is-place { --frame: #c4a574; }
+
+      .frame.is-link { width: auto; min-width: 78px; }
+      .frame.is-pay, .frame.is-gain { justify-content: center; min-height: 96px; }
+
+      .frame-kind {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        min-height: 22px;
+        color: var(--frame);
+        font-size: 9px;
+        font-weight: 650;
+        letter-spacing: 0.04em;
+        line-height: 1.15;
+        text-align: center;
+        text-transform: uppercase;
+      }
+
+      .frame-icon { display: flex; width: 12px; height: 12px; }
+      .frame-icon svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+
+      .frame-art {
+        position: relative;
+        width: 58px;
+        aspect-ratio: 59 / 86;
+        overflow: hidden;
+        border-radius: 3px;
+        background: var(--hover);
+      }
+
+      .frame.is-target .frame-art { outline: 1px dashed var(--frame); outline-offset: 2px; }
+
+      .frame-art img, .materials img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .frame-name {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 3px;
+        font-size: 8px;
+        line-height: 1.2;
+        text-align: center;
+      }
+
+      .frame-art.has-image .frame-name { display: none; }
+
+      .materials { display: flex; gap: 3px; }
+      .materials .frame-art { width: 24px; }
+
+      .frame-note, .frame-amount { color: var(--faint); font-size: 10px; line-height: 1.2; text-align: center; }
+      .frame-amount { color: var(--frame); font-size: 16px; font-weight: 650; }
+
+      .preview {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        overflow: auto;
+        padding: 12px;
+      }
+
+      .bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .tools {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        margin-left: auto;
+      }
+
+      .caption {
+        display: flex;
+        gap: 8px;
+        align-items: baseline;
+        min-width: 0;
+      }
+
+      .counter { color: var(--faint); font-size: 12px; font-variant-numeric: tabular-nums; }
+      .caption strong {
+        min-width: 0;
+        overflow: hidden;
+        font-size: 14px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .widget.is-board .caption { display: none; }
+
+      .modes { display: flex; gap: 4px; }
+
+      .mode {
+        height: 28px;
+        padding: 0 8px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: transparent;
+        color: var(--muted);
+        font: inherit;
+        font-size: 12px;
+        cursor: pointer;
+      }
+
+      .mode.is-on {
+        border-color: var(--accent);
+        color: var(--text);
+      }
+
+      .now { display: none; }
+
+      .widget.is-board .now { display: block; }
+
+      .now strong { display: block; font-size: 15px; }
+
+      .nav {
+        width: 28px;
+        height: 28px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+      }
+
+      .nav:disabled { opacity: 0.35; cursor: default; }
+
+      .board {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: var(--gap);
+        align-items: start;
+        width: 100%;
+        margin: 0 auto;
+      }
+
+      .widget.is-minimal .board { width: min(100%, 760px); }
+      .widget.is-minimal .board.is-versus { width: min(100%, 470px); }
+      .widget.is-board .board { width: min(100%, 760px); }
+      .widget.is-board .board.is-versus { width: min(100%, 620px); }
+
+      .slot {
+        position: relative;
+        aspect-ratio: 59 / 86;
+        overflow: hidden;
+        border: 0;
+        border-radius: 4px;
+        outline: 1px solid var(--line);
+        outline-offset: -1px;
+        background: var(--hover);
+      }
+
+      .slot.is-filled {
+        outline-color: transparent;
+        background: transparent;
+      }
+
+      .slot.is-glow {
+        outline: 2px solid var(--accent);
+        outline-offset: 0;
+        box-shadow: 0 0 14px var(--accent);
+      }
+
+      .slot img {
+        position: absolute;
+        inset: 0;
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .label, .card-name, .back {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px;
+        text-align: center;
+      }
+
+      .label {
+        color: var(--faint);
+        font-size: 9px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .card-name {
+        font-size: 10px;
+        line-height: 1.25;
+      }
+
+      .slot.has-image .card-name { display: none; }
+
+      .slot.is-set {
+        background:
+          repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0 2px, transparent 2px 7px),
+          rgba(255, 255, 255, 0.04);
+      }
+
+      .back { color: transparent; }
+
+      .count {
+        position: absolute;
+        right: 3px;
+        bottom: 3px;
+        min-width: 16px;
+        height: 16px;
+        padding: 0 4px;
+        border-radius: 8px;
+        background: var(--bg);
+        font-size: 10px;
+        line-height: 16px;
+        text-align: center;
+      }
+
+      .hand {
+        display: flex;
+        gap: var(--gap);
+        overflow-x: auto;
+      }
+
+      .hand .slot {
+        flex: 0 0 auto;
+        width: calc((100% - (var(--gap) * 6)) / 7);
+      }
+
+      @media (max-width: 800px) {
+        .widget,
+        .widget.is-minimal {
+          grid-template-columns: 1fr;
+          grid-template-rows: 280px minmax(0, 1fr);
+          height: 980px;
+        }
+
+        .widget.is-board {
+          grid-template-rows: minmax(0, 1fr);
+          height: auto;
+        }
+
+        .list { border-right: 0; border-bottom: 1px solid var(--line); }
+      }
+    </style>
+  </head>
+  <body>
+    <article>
+      <h1>Sunavalon</h1>
+      <p>List is the main view. Minimal is a narrow list and a wide board. Full opens the board, with only the selected step above it.</p>
+      <div id="sunavalon" class="widget"></div>
+
+      <h2>Against a set board</h2>
+      <p>The opponent board is a mirror. Our field spell stays on the left and theirs on the right. Skill Drain starts face-down and is banished on the next step.</p>
+      <div id="versus" class="widget"></div>
+    </article>
+    <script>
+      const ART = {
+        "Sunseed Genius Loci": "27520594",
+        "Sunvine Sowing": "53286626",
+        "Sunavalon Dryas": "93896655",
+        "Sunseed Twin": "66407907",
+        "Sunvine Thrasher": "91557476",
+        "Skill Drain": "82732705",
+        "Barrier Statue of the Stormwinds": "73356503",
+        "Lightning Storm": "14532163",
+        "Ash Blossom & Joyous Spring": "14558127",
+      };
+
+      const PILES = new Set(["hand", "gy", "banished", "oppHand", "oppGy", "oppBanished"]);
+
+      const OWN_ROWS = [
+        [".", ".", "emzL", ".", "emzR", ".", "banished"],
+        ["field", "m1", "m2", "m3", "m4", "m5", "gy"],
+        [".", "st1", "st2", "st3", "st4", "st5", "."],
+        ["hand", "hand", "hand", "hand", "hand", "hand", "hand"],
+      ];
+
+      const VERSUS_ROWS = [
+        ["oppHand", "oppHand", "oppHand", "oppHand", "oppHand", "oppHand", "oppHand"],
+        ["oppBanished", "oppSt5", "oppSt4", "oppSt3", "oppSt2", "oppSt1", "."],
+        ["oppGy", "oppM5", "oppM4", "oppM3", "oppM2", "oppM1", "oppField"],
+        [".", ".", "emzL", ".", "emzR", ".", "banished"],
+        ["field", "m1", "m2", "m3", "m4", "m5", "gy"],
+        [".", "st1", "st2", "st3", "st4", "st5", "."],
+        ["hand", "hand", "hand", "hand", "hand", "hand", "hand"],
+      ];
+
+      const LABELS = {
+        emzL: "EMZ", emzR: "EMZ", field: "FIELD", gy: "GY", banished: "BAN", hand: "HAND",
+        m1: "M1", m2: "M2", m3: "M3", m4: "M4", m5: "M5",
+        st1: "S1", st2: "S2", st3: "S3", st4: "S4", st5: "S5",
+        oppHand: "HAND", oppField: "FIELD", oppGy: "GY", oppBanished: "BAN",
+        oppM1: "M1", oppM2: "M2", oppM3: "M3", oppM4: "M4", oppM5: "M5",
+        oppSt1: "S1", oppSt2: "S2", oppSt3: "S3", oppSt4: "S4", oppSt5: "S5",
+      };
+
+      const SEQUENCES = [
+        {
+          name: "Sunavalon",
+          board: "own",
+          steps: [
+            {
+              say: "Opening hand",
+              frames: [
+                { type: "hand", card: "Sunseed Genius Loci" },
+                { type: "hand", card: "Sunvine Sowing" },
+              ],
+              cards: { hand: ["Sunseed Genius Loci", "Sunvine Sowing"] },
+            },
+            {
+              say: "Normal summon Loci",
+              frames: [{ type: "summon", kind: "Normal", card: "Sunseed Genius Loci", from: "hand" }],
+              glow: ["m3"],
+              cards: { hand: ["Sunvine Sowing"], m3: "Sunseed Genius Loci" },
+            },
+            {
+              say: "Link Dryas",
+              frames: [{ type: "link", card: "Sunavalon Dryas", using: ["Sunseed Genius Loci"], to: "EMZ" }],
+              glow: ["emzL"],
+              cards: { m3: null, emzL: "Sunavalon Dryas" },
+            },
+            {
+              say: "Activate Sowing",
+              frames: [{ type: "activate", card: "Sunvine Sowing" }],
+              glow: ["st3"],
+              cards: { hand: [], st3: "Sunvine Sowing" },
+            },
+            {
+              say: "Resolve Sowing",
+              frames: [
+                { type: "summon", kind: "Special", card: "Sunseed Twin", from: "deck" },
+                { type: "pay", amount: "1000" },
+              ],
+              glow: ["m2"],
+              cards: { m2: "Sunseed Twin" },
+            },
+            {
+              say: "Chain Twin, Dryas chains",
+              frames: [
+                { type: "activate", card: "Sunseed Twin" },
+                { type: "target", card: "Sunseed Genius Loci" },
+                { type: "chain", card: "Sunavalon Dryas", n: 2 },
+              ],
+              glow: ["m2", "emzL"],
+            },
+            {
+              say: "Resolve Dryas",
+              frames: [
+                { type: "summon", kind: "Special", card: "Sunvine Thrasher", from: "extra" },
+                { type: "gain", amount: "1000" },
+              ],
+              glow: ["m4"],
+              cards: { m4: "Sunvine Thrasher" },
+            },
+            {
+              say: "Resolve Twin",
+              frames: [{ type: "summon", kind: "Special", card: "Sunseed Genius Loci", from: "gy" }],
+              glow: ["m1"],
+              cards: { m1: "Sunseed Genius Loci" },
+            },
+            {
+              say: "Activate Dryas",
+              frames: [{ type: "activate", card: "Sunavalon Dryas" }],
+              glow: ["emzL"],
+            },
+          ],
+        },
+        {
+          name: "Into Skill Drain",
+          board: "versus",
+          steps: [
+            {
+              say: "They have Skill Drain",
+              frames: [
+                { type: "set", card: "Skill Drain" },
+                { type: "place", card: "Barrier Statue of the Stormwinds" },
+              ],
+              cards: {
+                oppSt3: { name: "Skill Drain", set: true },
+                oppM3: "Barrier Statue of the Stormwinds",
+                hand: ["Lightning Storm", "Ash Blossom & Joyous Spring"],
+              },
+            },
+            {
+              say: "Lightning Storm",
+              frames: [
+                { type: "activate", card: "Lightning Storm" },
+                { type: "banish", card: "Skill Drain", from: "field" },
+              ],
+              glow: ["banished"],
+              cards: {
+                hand: ["Ash Blossom & Joyous Spring"],
+                oppSt3: null,
+                banished: ["Skill Drain"],
+              },
+            },
+          ],
+        },
+      ];
+
+      function emptyPicture() {
+        const picture = {};
+        for (const zone of Object.keys(LABELS)) picture[zone] = PILES.has(zone) ? [] : null;
+        return picture;
+      }
+
+      function cardOf(value) {
+        if (value == null) return null;
+        if (typeof value === "string") return { name: value, glow: false, set: false };
+        if (!value.name) return null;
+        return { name: value.name, glow: Boolean(value.glow), set: Boolean(value.set) };
+      }
+
+      function resolve(steps) {
+        let current = emptyPicture();
+        return steps.map((step) => {
+          current = structuredClone(current);
+          for (const zone of Object.keys(current)) {
+            const value = current[zone];
+            if (Array.isArray(value)) value.forEach((card) => { card.glow = false; });
+            else if (value) value.glow = false;
+          }
+          for (const [zone, value] of Object.entries(step.cards || {})) {
+            current[zone] = PILES.has(zone)
+              ? (Array.isArray(value) ? value : value == null ? [] : [value]).map(cardOf).filter(Boolean)
+              : cardOf(value);
+          }
+          for (const token of step.glow || []) {
+            const value = current[token];
+            if (Array.isArray(value)) value.forEach((card) => { card.glow = true; });
+            else if (value) value.glow = true;
+          }
+          return current;
+        });
+      }
+
+      function artUrl(name) {
+        const id = ART[name];
+        return id ? `https://images.ygoprodeck.com/images/cards/${id}.jpg` : "";
+      }
+
+      const FRAME_ICONS = {
+        activate: '<path d="M9 1.5 4.5 9h3.2L6.8 14.5 12 7H8.6z"/>',
+        summon: '<path d="M8 2.5 3.5 8H6v5.5h4V8h2.5z"/>',
+        link: '<circle cx="4" cy="8" r="1.6"/><circle cx="12" cy="8" r="1.6"/><path d="M5.6 8h4.8"/>',
+        target: '<circle cx="8" cy="8" r="4.2"/><circle cx="8" cy="8" r="1"/><path d="M8 1.5v2.2M8 12.3v2.2M1.5 8h2.2M12.3 8h2.2"/>',
+        chain: '<path d="M3 6.2h3.2a1.8 1.8 0 0 1 0 3.6H3M10 6.2h3a1.8 1.8 0 0 1 0 3.6H10M6.2 8h3.6"/>',
+        banish: '<path d="M8 3.2a4.8 4.8 0 1 0 1.6 3.6"/><path d="M8 1.6v3.2h3.2"/>',
+        set: '<rect x="4.5" y="2.2" width="7" height="11.6" rx="1"/>',
+        pay: '<path d="M3 8h10"/>',
+        gain: '<path d="M8 3v10M3 8h10"/>',
+        hand: '<rect x="2.2" y="3" width="5.2" height="9.5" rx="0.8"/><rect x="8.6" y="4.2" width="5.2" height="9.5" rx="0.8"/>',
+        place: '<rect x="3" y="3" width="10" height="10" rx="1"/>',
+      };
+
+      function renderFrames(host, frames) {
+        host.replaceChildren();
+        if (!frames || !frames.length) return;
+        const row = document.createElement("span");
+        row.className = "frames";
+        for (const frame of frames) row.append(renderFrame(frame));
+        host.append(row);
+      }
+
+      function renderFrame(frame) {
+        const node = document.createElement("span");
+        node.className = `frame is-${frame.type}`;
+        const kind = document.createElement("span");
+        kind.className = "frame-kind";
+        const icon = document.createElement("span");
+        icon.className = "frame-icon";
+        icon.innerHTML = `<svg viewBox="0 0 16 16">${FRAME_ICONS[frame.type] || ""}</svg>`;
+        const label = document.createElement("span");
+        label.textContent = frameLabel(frame);
+        kind.append(icon, label);
+        node.append(kind);
+        if (frame.amount) {
+          const amount = document.createElement("span");
+          amount.className = "frame-amount";
+          amount.textContent = frame.amount;
+          node.append(amount);
+        }
+        if (frame.card) node.append(miniArt(frame.card));
+        if (frame.using && frame.using.length) {
+          const mats = document.createElement("span");
+          mats.className = "materials";
+          for (const name of frame.using) mats.append(miniArt(name));
+          node.append(mats);
+        }
+        const note = frame.from ? `From ${frame.from}` : frame.note || (frame.to ? `To ${frame.to}` : "");
+        if (note) {
+          const line = document.createElement("span");
+          line.className = "frame-note";
+          line.textContent = note;
+          node.append(line);
+        }
+        return node;
+      }
+
+      function frameLabel(frame) {
+        if (frame.type === "summon") return frame.kind ? `${frame.kind} Summon` : "Summon";
+        if (frame.type === "link") return "Link";
+        if (frame.type === "chain") return frame.n ? `Chain ${frame.n}` : "Chain";
+        if (frame.type === "activate") return "Activate";
+        if (frame.type === "target") return "Target";
+        if (frame.type === "banish") return "Banish";
+        if (frame.type === "set") return "Set";
+        if (frame.type === "pay") return "Pay";
+        if (frame.type === "gain") return "Gain";
+        if (frame.type === "hand") return "In hand";
+        if (frame.type === "place") return "On field";
+        return frame.type;
+      }
+
+      function miniArt(name) {
+        const art = document.createElement("span");
+        art.className = "frame-art";
+        const text = document.createElement("span");
+        text.className = "frame-name";
+        text.textContent = name;
+        art.append(text);
+        const url = artUrl(name);
+        if (url) {
+          const image = document.createElement("img");
+          image.alt = name;
+          image.addEventListener("load", () => art.classList.add("has-image"));
+          image.src = url;
+          art.append(image);
+        }
+        return art;
+      }
+
+      function mount(root, sequence) {
+        const pictures = resolve(sequence.steps);
+        const rows = sequence.board === "versus" ? VERSUS_ROWS : OWN_ROWS;
+        let index = 0;
+        let mode = "list";
+
+        root.replaceChildren();
+        root.classList.add("is-list");
+        const list = document.createElement("div");
+        list.className = "list";
+        const title = document.createElement("h3");
+        title.textContent = sequence.name;
+        list.append(title);
+
+        const preview = document.createElement("div");
+        preview.className = "preview";
+        const bar = document.createElement("div");
+        bar.className = "bar";
+        const caption = document.createElement("div");
+        caption.className = "caption";
+        const counter = document.createElement("span");
+        counter.className = "counter";
+        const say = document.createElement("strong");
+        caption.append(counter, say);
+        const modes = document.createElement("div");
+        modes.className = "modes";
+        const modeButtons = [
+          ["list", "List"],
+          ["minimal", "Minimal"],
+          ["board", "Full"],
+        ].map(([id, label]) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "mode";
+          button.textContent = label;
+          button.addEventListener("click", () => {
+            root.dataset.mode = id;
+            setMode(id);
+          });
+          modes.append(button);
+          return button;
+        });
+        const controls = document.createElement("div");
+        controls.className = "modes";
+        const prev = nav("‹", "Previous step");
+        const next = nav("›", "Next step");
+        controls.append(prev, next);
+        const tools = document.createElement("div");
+        tools.className = "tools";
+        tools.append(modes, controls);
+        bar.append(caption, tools);
+        const now = document.createElement("div");
+        now.className = "now";
+        const nowSay = document.createElement("strong");
+        const nowLines = document.createElement("div");
+        now.append(nowSay, nowLines);
+        const stage = document.createElement("div");
+        preview.append(bar, now, stage);
+        root.append(list, preview);
+
+        const buttons = sequence.steps.map((step, stepIndex) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "step";
+          const number = document.createElement("span");
+          number.className = "n";
+          number.textContent = String(stepIndex + 1);
+          const body = document.createElement("span");
+          body.className = "step-body";
+          const heading = document.createElement("span");
+          heading.className = "say";
+          heading.textContent = step.say;
+          const frames = document.createElement("span");
+          renderFrames(frames, step.frames);
+          body.append(heading, frames);
+          button.append(number, body);
+          button.addEventListener("click", () => show(stepIndex));
+          list.append(button);
+          return button;
+        });
+
+        prev.addEventListener("click", () => show(index - 1));
+        next.addEventListener("click", () => show(index + 1));
+        root.tabIndex = 0;
+        root.addEventListener("keydown", (event) => {
+          if (event.key === "ArrowDown") { event.preventDefault(); show(index + 1); }
+          if (event.key === "ArrowUp") { event.preventDefault(); show(index - 1); }
+          if (event.key === "Escape" && mode === "board") setMode("list");
+        });
+
+        setMode("list");
+        show(0);
+
+        function setMode(nextMode) {
+          mode = nextMode;
+          root.classList.remove("is-list", "is-minimal", "is-board");
+          root.classList.add(mode === "minimal" ? "is-minimal" : mode === "board" ? "is-board" : "is-list");
+          modeButtons.forEach((button, buttonIndex) => {
+            button.classList.toggle("is-on", ["list", "minimal", "board"][buttonIndex] === mode);
+          });
+        }
+
+        function show(nextIndex) {
+          index = Math.max(0, Math.min(pictures.length - 1, nextIndex));
+          const step = sequence.steps[index];
+          counter.textContent = `${index + 1} / ${pictures.length}`;
+          say.textContent = step.say;
+          nowSay.textContent = `${index + 1} / ${pictures.length}  ${step.say}`;
+          renderFrames(nowLines, step.frames);
+          prev.disabled = index === 0;
+          next.disabled = index === pictures.length - 1;
+          buttons.forEach((button, buttonIndex) => button.classList.toggle("is-active", buttonIndex === index));
+          const listRect = list.getBoundingClientRect();
+          const itemRect = buttons[index].getBoundingClientRect();
+          if (itemRect.top < listRect.top) list.scrollTop -= listRect.top - itemRect.top;
+          else if (itemRect.bottom > listRect.bottom) list.scrollTop += itemRect.bottom - listRect.bottom;
+          stage.replaceChildren(drawBoard(pictures[index], rows));
+        }
+      }
+
+      function drawBoard(picture, rows) {
+        const board = document.createElement("div");
+        board.className = rows === VERSUS_ROWS ? "board is-versus" : "board";
+        const areas = [...new Set(rows.flat().filter((area) => area !== "."))];
+        board.style.gridTemplateAreas = rows.map((row) => `"${row.join(" ")}"`).join(" ");
+        for (const area of areas) {
+          if (area === "hand" || area === "oppHand") {
+            board.append(drawHand(picture, area));
+            continue;
+          }
+          const value = picture[area];
+          const pile = Array.isArray(value) ? value : null;
+          const card = pile ? pile[pile.length - 1] || null : value;
+          const slot = card ? drawCard(card, pile ? pile.some((item) => item.glow) : card.glow) : drawEmpty(LABELS[area] || area);
+          slot.style.gridArea = area;
+          slot.dataset.zone = area;
+          if (pile && pile.length > 1) {
+            const count = document.createElement("span");
+            count.className = "count";
+            count.textContent = String(pile.length);
+            slot.append(count);
+          }
+          board.append(slot);
+        }
+        return board;
+      }
+
+      function drawHand(picture, zone) {
+        const row = document.createElement("div");
+        row.className = "hand";
+        row.style.gridArea = zone;
+        const cards = picture[zone] || [];
+        if (!cards.length) {
+          row.append(drawEmpty("HAND"));
+          return row;
+        }
+        for (const card of cards) row.append(drawCard(card, card.glow));
+        return row;
+      }
+
+      function drawCard(card, glow) {
+        const slot = document.createElement("div");
+        slot.className = "slot is-filled";
+        slot.dataset.card = card.name;
+        if (glow) slot.classList.add("is-glow");
+        slot.dataset.glow = glow ? "true" : "false";
+        if (card.set) {
+          slot.classList.add("is-set");
+          slot.title = card.name;
+          const back = document.createElement("span");
+          back.className = "back";
+          back.textContent = card.name;
+          slot.append(back);
+          return slot;
+        }
+        const name = document.createElement("span");
+        name.className = "card-name";
+        name.textContent = card.name;
+        slot.append(name);
+        const url = artUrl(card.name);
+        if (url) {
+          const image = document.createElement("img");
+          image.alt = card.name;
+          image.addEventListener("load", () => slot.classList.add("has-image"));
+          image.src = url;
+          slot.append(image);
+        }
+        return slot;
+      }
+
+      function drawEmpty(label) {
+        const slot = document.createElement("div");
+        slot.className = "slot";
+        const text = document.createElement("span");
+        text.className = "label";
+        text.textContent = label;
+        slot.append(text);
+        return slot;
+      }
+
+      function nav(text, label) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "nav";
+        button.textContent = text;
+        button.setAttribute("aria-label", label);
+        return button;
+      }
+
+      mount(document.getElementById("sunavalon"), SEQUENCES[0]);
+      mount(document.getElementById("versus"), SEQUENCES[1]);
+    </script>
+  </body>
+</html>

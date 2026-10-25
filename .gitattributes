@@ -1,0 +1,5 @@
+* text=auto eol=lf
+
+# GitHub builds source archives with git archive. Leave them empty.
+# The release workflow uploads only the built plugin.
+* export-ignore

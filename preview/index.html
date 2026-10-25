@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Combo board preview</title>
+    <link rel="stylesheet" href="../styles.css" />
+    <style>
+      html {
+        --background-primary: #1e1e1e;
+        --background-secondary: #252525;
+        --background-modifier-border: rgba(255, 255, 255, 0.16);
+        --background-modifier-hover: rgba(255, 255, 255, 0.06);
+        --text-normal: #dcddde;
+        --text-muted: #9a9a9a;
+        --text-faint: #777;
+        --interactive-accent: #7f6df2;
+        background: #1e1e1e;
+        color: #dcddde;
+      }
+
+      body {
+        margin: 0;
+      }
+
+      main {
+        display: grid;
+        gap: 28px;
+        padding: 20px;
+      }
+
+      .frame {
+        height: 720px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div id="own" class="frame"></div>
+      <div id="versus" class="frame"></div>
+    </main>
+    <script src="preview.js"></script>
+  </body>
+</html>

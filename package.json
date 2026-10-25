@@ -1,0 +1,21 @@
+{
+  "name": "ygo-combo-builder",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc --noEmit --pretty false && node esbuild.config.mjs production",
+    "dev": "node esbuild.config.mjs",
+    "preview": "node scripts/preview.mjs",
+    "test": "node esbuild.config.mjs test && node tmp/model.test.js"
+  },
+  "dependencies": {
+    "yaml": "^2.8.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "builtin-modules": "^4.0.0",
+    "esbuild": "^0.25.10",
+    "obsidian": "^1.10.0",
+    "typescript": "^5.9.2"
+  }
+}
