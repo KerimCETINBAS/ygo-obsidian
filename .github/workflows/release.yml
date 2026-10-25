@@ -36,6 +36,12 @@ jobs:
           npm test
           npm run build
 
+      - name: Pack the plugin folder
+        run: |
+          mkdir -p pack/ygo-combo-builder
+          cp dist/main.js dist/manifest.json dist/styles.css pack/ygo-combo-builder/
+          (cd pack && zip -r ../dist/ygo-combo-builder.zip ygo-combo-builder)
+
       - name: Generate artifact attestation
         uses: actions/attest@v4
         with:
@@ -43,6 +49,8 @@ jobs:
             dist/main.js
             dist/manifest.json
             dist/styles.css
+            dist/ygo-combo-builder.zip
+            AI.md
 
       - name: Create release
         env:
@@ -51,8 +59,18 @@ jobs:
           tag="${GITHUB_REF#refs/tags/}"
           gh release create "$tag" \
             --title="$tag" \
-            --draft \
-            --notes "Built plugin only. Copy main.js, manifest.json, and styles.css into .obsidian/plugins/ygo-combo-builder/." \
+            --notes "$(cat <<EOF
+          Obsidian installs from the separate \`main.js\`, \`manifest.json\`, and \`styles.css\` assets.
+
+          \`ygo-combo-builder.zip\` is the same three files inside a \`ygo-combo-builder\` folder, for a manual copy into \`.obsidian/plugins/\`.
+
+          The Source code links on this release are empty on purpose. Read the source in the repository.
+
+          \`AI.md\` is the agent catalog. Give that file to an agent, or point a filesystem tool at it.
+          EOF
+          )" \
             dist/main.js \
             dist/manifest.json \
-            dist/styles.css
+            dist/styles.css \
+            dist/ygo-combo-builder.zip \
+            AI.md

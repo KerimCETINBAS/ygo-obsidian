@@ -6,6 +6,19 @@ Used cards are written into the `cards` folder as `Card Name.md` and `Card Name.
 
 The human reference is [docs](docs/README.md). Frame types and their fields are listed in [docs/frames.md](docs/frames.md). [AI.md](AI.md) is the same material arranged for an agent.
 
+## Network
+
+A missing card is fetched once from YGOPRODeck, then stored in the vault.
+
+- `https://db.ygoprodeck.com/api/v7/cardinfo.php` returns the name, passcode, and effect.
+- `https://images.ygoprodeck.com/images/cards/{id}.jpg` is the picture.
+
+The picture and the text are written to `cards/Card Name.png` and `cards/Card Name.md`. Later views and tooltips read those files. Typing `[[` also asks YGOPRODeck when the query is at least two characters and the card is not already in the vault. The plugin does not send note text anywhere else.
+
+## AI
+
+This plugin was written with an AI coding assistant. It does not send notes, decks, or combos to an AI service. [AI.md](AI.md) is only a guide an agent can read locally to write notes for this plugin.
+
 ## Syntax
 
 A deck is YDK text:
@@ -57,8 +70,6 @@ Push a tag that matches `version` in `manifest.json`. Leave off the `v` prefix.
 git tag 0.1.0
 git push origin 0.1.0
 ```
-
-The workflow builds the plugin and opens a draft release with `main.js`, `manifest.json`, and `styles.css`. Publish that draft. In the repository settings, Actions needs read and write permission so the workflow can create the release.
 
 ## License
 
