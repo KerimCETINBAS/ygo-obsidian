@@ -3,8 +3,13 @@ import { cardLinkLabel } from "./card-record";
 
 export type CardView = {
   name: string;
-  glow: boolean;
+  glow: string | null;
   set: boolean;
+};
+
+export type GlowMark = {
+  kind: string;
+  tokens: string[];
 };
 
 export type ZoneId =
@@ -75,6 +80,7 @@ export type Step = {
   lines: string[];
   frames: Frame[];
   glow: string[];
+  glows: GlowMark[];
   cards?: Record<string, unknown>;
 };
 
@@ -181,7 +187,7 @@ export function resolvePictures(steps: Step[]): BoardPicture[] {
     current = structuredClone(current);
     clearGlow(current);
     if (step.cards) applyCards(current, step.cards);
-    applyGlow(current, step.glow);
+    for (const mark of step.glows) applyGlow(current, mark.kind, mark.tokens);
     return current;
   });
 }
@@ -210,7 +216,7 @@ export function pileGlow(picture: BoardPicture, zone: ZoneId): boolean {
 
 function parseStep(raw: unknown, index: number): Step {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
-    return { say: `Step ${index + 1}`, lines: [], frames: [], glow: [] };
+    return { say: `Step ${index + 1}`, lines: [], frames: [], glow: [], glows: [] };
   }
 
   const record = raw as Record<string, unknown>;
@@ -219,13 +225,32 @@ function parseStep(raw: unknown, index: number): Step {
     typeof record.say === "string" && record.say.trim()
       ? record.say.trim()
       : lines[0] ?? `Step ${index + 1}`;
-  const glow = Array.isArray(record.glow) ? record.glow.map((item) => String(item).trim()).filter(Boolean) : [];
+  const glow = stringList(record.glow);
+  const glows = glowMarks(record, glow);
   const cards =
     record.cards && typeof record.cards === "object" && !Array.isArray(record.cards)
       ? (record.cards as Record<string, unknown>)
       : undefined;
 
-  return { say, lines, frames: parseFrames(record.frames), glow, cards };
+  return { say, lines, frames: parseFrames(record.frames), glow, glows, cards };
+}
+
+function glowMarks(record: Record<string, unknown>, glow: string[]): GlowMark[] {
+  const marks: GlowMark[] = [];
+  if (glow.length) marks.push({ kind: "glow", tokens: glow });
+  const numbered = Object.keys(record)
+    .filter((key) => /^glow\d+$/.test(key))
+    .sort((a, b) => Number(a.slice(4)) - Number(b.slice(4)));
+  for (const key of numbered) {
+    const tokens = stringList(record[key]);
+    if (tokens.length) marks.push({ kind: key, tokens });
+  }
+  return marks;
+}
+
+function stringList(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => String(item).trim()).filter(Boolean);
 }
 
 function parseFrames(raw: unknown): Frame[] {
@@ -286,27 +311,27 @@ function applyCards(picture: BoardPicture, cards: Record<string, unknown>) {
   }
 }
 
-function applyGlow(picture: BoardPicture, glow: string[]) {
+function applyGlow(picture: BoardPicture, kind: string, glow: string[]) {
   for (const token of glow) {
     const zone = aliasZone(token);
     if (zone) {
       const value = picture[zone];
       if (Array.isArray(value)) {
-        for (const card of value) card.glow = true;
+        for (const card of value) card.glow = kind;
       } else if (value) {
-        value.glow = true;
+        value.glow = kind;
       }
       continue;
     }
 
     for (const card of eachCard(picture)) {
-      if (card.name.toLowerCase() === token.toLowerCase()) card.glow = true;
+      if (card.name.toLowerCase() === token.toLowerCase()) card.glow = kind;
     }
   }
 }
 
 function clearGlow(picture: BoardPicture) {
-  for (const card of eachCard(picture)) card.glow = false;
+  for (const card of eachCard(picture)) card.glow = null;
 }
 
 function eachCard(picture: BoardPicture): CardView[] {
@@ -363,17 +388,25 @@ function cardName(value: unknown): string {
 function normalizeCard(value: unknown): CardView | null {
   if (value == null) return null;
   const linked = cardName(value);
-  if (linked) return { name: linked, glow: false, set: false };
+  if (linked) return { name: linked, glow: null, set: false };
   if (typeof value === "object" && !Array.isArray(value)) {
     const record = value as Record<string, unknown>;
     const name = cardName(record.name ?? record.card);
     if (!name) return null;
     return {
       name,
-      glow: Boolean(record.glow),
+      glow: cardGlow(record.glow),
       set: Boolean(record.set ?? record.facedown ?? record.faceDown),
     };
   }
+  return null;
+}
+
+function cardGlow(value: unknown): string | null {
+  if (value === true) return "glow";
+  if (typeof value !== "string") return null;
+  const text = value.trim();
+  if (text === "glow" || /^glow\d+$/.test(text)) return text;
   return null;
 }
 

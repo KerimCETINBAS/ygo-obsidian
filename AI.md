@@ -68,7 +68,7 @@ Each step has:
 
 - `say`: the step title.
 - `frames`: the cards and actions in that step. When a step has frames, its `lines` are not shown.
-- `glow`: zones or card names that light up on this step only.
+- `glow`: zones or card names that light up on this step only. `glow1` effect, `glow2` target, `glow3` summon, `glow4` tribute. Further colors are `glow5`, `glow6`, and so on.
 - `cards`: the board change for this step.
 
 Put the action in the frame. `from`, `to`, and `note` are joined on the card as `From hand · To m3 · note`.
@@ -77,7 +77,7 @@ Put the action in the frame. `from`, `to`, and `note` are joined on the card as 
 
 A zone you leave out stays as it was. These piles replace the whole pile whenever you write them: `hand`, `gy`, `banished`, `oppHand`, `oppGy`, `oppBanished`. Write the full pile again. `null` clears one slot. `[]` clears a pile.
 
-`glow` does not carry to the next step. Set it on the step that should light up.
+`glow`, `glow1`, `glow2`, and the later numbered lists do not carry to the next step. Set them on the step that should light up. A card listed twice keeps the last color.
 
 There is no equip zone. Take the equipped card off the field or Graveyard and say what it equips in the frame note. A face-down card is `st5: { name: [[Rikka Sheet]], set: true }`.
 

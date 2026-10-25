@@ -18,12 +18,12 @@ assert.deepEqual(
 );
 
 assert.equal(slotCard(pictures[1], "m3")?.name, "Sunseed Genius Loci");
-assert.equal(slotCard(pictures[1], "m3")?.glow, true);
-assert.equal(pictures[1].hand[0]?.glow, false);
+assert.equal(slotCard(pictures[1], "m3")?.glow, "glow");
+assert.equal(pictures[1].hand[0]?.glow, null);
 
 assert.equal(slotCard(pictures[2], "m3"), null);
 assert.equal(slotCard(pictures[2], "emzL")?.name, "Sunavalon Dryas");
-assert.equal(slotCard(pictures[2], "emzL")?.glow, true);
+assert.equal(slotCard(pictures[2], "emzL")?.glow, "glow");
 assert.deepEqual(
   pictures[2].hand.map((card) => card.name),
   ["Sunvine Sowing"],
@@ -31,20 +31,20 @@ assert.deepEqual(
 
 assert.equal(pictures[3].hand.length, 0);
 assert.equal(slotCard(pictures[3], "st3")?.name, "Sunvine Sowing");
-assert.equal(slotCard(pictures[3], "st3")?.glow, true);
-assert.equal(slotCard(pictures[3], "emzL")?.glow, false);
+assert.equal(slotCard(pictures[3], "st3")?.glow, "glow");
+assert.equal(slotCard(pictures[3], "emzL")?.glow, null);
 
-assert.equal(slotCard(pictures[5], "m2")?.glow, true);
-assert.equal(slotCard(pictures[5], "emzL")?.glow, true);
-assert.equal(slotCard(pictures[5], "st3")?.glow, false);
+assert.equal(slotCard(pictures[5], "m2")?.glow, "glow");
+assert.equal(slotCard(pictures[5], "emzL")?.glow, "glow");
+assert.equal(slotCard(pictures[5], "st3")?.glow, null);
 assert.equal(slotCard(pictures[5], "m4"), null);
 
 assert.equal(slotCard(pictures[7], "m1")?.name, "Sunseed Genius Loci");
 assert.equal(slotCard(pictures[7], "m2")?.name, "Sunseed Twin");
 assert.equal(slotCard(pictures[7], "m4")?.name, "Sunvine Thrasher");
 assert.equal(slotCard(pictures[8], "m1")?.name, "Sunseed Genius Loci");
-assert.equal(slotCard(pictures[8], "emzL")?.glow, true);
-assert.equal(slotCard(pictures[8], "m1")?.glow, false);
+assert.equal(slotCard(pictures[8], "emzL")?.glow, "glow");
+assert.equal(slotCard(pictures[8], "m1")?.glow, null);
 
 const broken = parseCombo("steps: nope");
 assert.equal(broken.ok, false);
@@ -58,7 +58,7 @@ assert.equal(slotCard(versusPictures[0], "oppSt3")?.set, true);
 assert.equal(slotCard(versusPictures[1], "oppSt3"), null);
 assert.equal(slotCard(versusPictures[1], "oppM3")?.name, "Barrier Statue of the Stormwinds");
 assert.equal(versusPictures[1].banished[0]?.name, "Skill Drain");
-assert.equal(versusPictures[1].hand[0]?.glow, true);
+assert.equal(versusPictures[1].hand[0]?.glow, "glow");
 assert.equal(parsed.doc.steps[0]?.frames.length, 2);
 assert.equal(parsed.doc.steps[0]?.frames[0]?.type, "hand");
 assert.equal(parsed.doc.steps[4]?.frames[1]?.type, "pay");
@@ -125,5 +125,26 @@ assert.equal(parseCardNote(linkNote)?.desc, linkText);
 assert.ok(note.includes("\n---\n\n%%\nAuto-generated. Do not edit.\n%%\n\n## image\n"));
 assert.ok(note.includes("## image\n\n![[Sunseed Genius Loci.png]]"));
 assert.ok(note.includes("## text\n\nA seed."));
+
+const marked = parseCombo(`
+steps:
+  - say: Mark
+    glow1: [m3]
+    glow2: [emzL]
+    glow4: [m3]
+    cards:
+      m3: Loci
+      emzL: Dryas
+  - say: Next
+    cards:
+      m4: Twin
+`);
+assert.equal(marked.ok, true);
+if (!marked.ok) throw new Error("marks failed");
+const markedPictures = resolvePictures(marked.doc.steps);
+assert.equal(slotCard(markedPictures[0], "m3")?.glow, "glow4");
+assert.equal(slotCard(markedPictures[0], "emzL")?.glow, "glow2");
+assert.equal(slotCard(markedPictures[1], "m3")?.glow, null);
+assert.equal(slotCard(markedPictures[1], "emzL")?.glow, null);
 
 console.log("model tests passed");

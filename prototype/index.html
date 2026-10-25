@@ -327,9 +327,9 @@
       }
 
       .slot.is-glow {
-        outline: 2px solid var(--accent);
+        outline: 2px solid var(--glow, var(--accent));
         outline-offset: 0;
-        box-shadow: 0 0 14px var(--accent);
+        box-shadow: 0 0 14px var(--glow, var(--accent));
       }
 
       .slot img {
@@ -353,9 +353,11 @@
 
       .label {
         color: var(--faint);
-        font-size: 9px;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
+        font-size: 8px;
+        letter-spacing: 0;
+        line-height: 1.15;
+        overflow-wrap: anywhere;
+        text-transform: none;
       }
 
       .card-name {
@@ -597,10 +599,17 @@
               ? (Array.isArray(value) ? value : value == null ? [] : [value]).map(cardOf).filter(Boolean)
               : cardOf(value);
           }
-          for (const token of step.glow || []) {
-            const value = current[token];
-            if (Array.isArray(value)) value.forEach((card) => { card.glow = true; });
-            else if (value) value.glow = true;
+          const marks = [["glow", step.glow]];
+          Object.keys(step)
+            .filter((key) => /^glow\d+$/.test(key))
+            .sort((a, b) => Number(a.slice(4)) - Number(b.slice(4)))
+            .forEach((key) => marks.push([key, step[key]]));
+          for (const [kind, tokens] of marks) {
+            for (const token of tokens || []) {
+              const value = current[token];
+              if (Array.isArray(value)) value.forEach((card) => { card.glow = kind; });
+              else if (value) value.glow = kind;
+            }
           }
           return current;
         });
@@ -835,7 +844,7 @@
           const value = picture[area];
           const pile = Array.isArray(value) ? value : null;
           const card = pile ? pile[pile.length - 1] || null : value;
-          const slot = card ? drawCard(card, pile ? pile.some((item) => item.glow) : card.glow) : drawEmpty(LABELS[area] || area);
+          const slot = card ? drawCard(card, pile ? [...pile].reverse().find((item) => item.glow)?.glow || null : card.glow) : drawEmpty(area);
           slot.style.gridArea = area;
           slot.dataset.zone = area;
           if (pile && pile.length > 1) {
@@ -855,7 +864,7 @@
         row.style.gridArea = zone;
         const cards = picture[zone] || [];
         if (!cards.length) {
-          row.append(drawEmpty("HAND"));
+          row.append(drawEmpty(zone));
           return row;
         }
         for (const card of cards) row.append(drawCard(card, card.glow));
@@ -866,8 +875,13 @@
         const slot = document.createElement("div");
         slot.className = "slot is-filled";
         slot.dataset.card = card.name;
-        if (glow) slot.classList.add("is-glow");
-        slot.dataset.glow = glow ? "true" : "false";
+        if (glow) {
+          slot.classList.add("is-glow");
+          const colors = { glow1: "#7f6df2", glow2: "#e2b340", glow3: "#3dba7a", glow4: "#e06b6b" };
+          const number = Number(String(glow).slice(4));
+          const color = colors[glow] || (number > 4 ? `hsl(${(number * 47) % 360} 72% 62%)` : "");
+          if (color) slot.style.setProperty("--glow", color);
+        }
         if (card.set) {
           slot.classList.add("is-set");
           slot.title = card.name;

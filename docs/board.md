@@ -1,6 +1,6 @@
 # Board
 
-Our field is drawn in this order. Empty labels on the board are `EMZ`, `FIELD`, `M1` through `M5`, `S1` through `S5`, `GY`, `BAN`, and `HAND`.
+Our field is drawn in this order. An empty slot shows the zone name you write in the combo, with the same letters: `emzL`, `m1`, `st1`, `gy`, `oppHand`.
 
 | | | | | | | |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -31,12 +31,14 @@ These piles are replaced completely each time you write them:
 
 If Loci was in the Graveyard and you add Sowing, write both names. `[]` clears that pile. The top of the pile is the last name in the list, and that card is the one drawn in the zone.
 
-`glow` is not carried over. List the zones, or a card name, on the step that should light up.
+`glow` is not carried over. List the zones, or a card name, on the step that should light up. `glow` is the plain highlight. Numbered lists use a different color: `glow1` effect, `glow2` target, `glow3` summon, `glow4` tribute. `glow5` and above keep going. A card named in more than one list keeps the last color.
 
 ```yaml
 glow:
   - m3
+glow1:
   - emzL
+glow2:
   - hand
 ```
 

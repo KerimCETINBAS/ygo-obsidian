@@ -36,7 +36,7 @@ A page can hold more than one combo. **Insert combo** pastes a short sample.
 
 If a step has frames, its `lines` stay hidden. A step with no frames shows `lines` under the title, except a line that repeats `say`.
 
-`glow` lights a zone, or every visible card with that name, and only on that step.
+`glow` lights a zone, or every visible card with that name, and only on that step. `glow1` is an effect, `glow2` a target, `glow3` a summon, and `glow4` a tribute. More colors are `glow5`, `glow6`, and so on.
 
 ## Views
 

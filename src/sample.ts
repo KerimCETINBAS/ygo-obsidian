@@ -32,7 +32,7 @@ export const DECK_SOURCE = `#created by ComboBuilder
 `;
 
 export const SAMPLE_SOURCE = `# Zones you leave out stay as they were.
-# glow is placed by hand and only shows on this step.
+# glow is placed by hand and only shows on this step. glow1 effect, glow2 target, glow3 summon, glow4 tribute.
 name: Sunavalon
 board: own
 steps:

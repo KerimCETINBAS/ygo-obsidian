@@ -43,38 +43,7 @@ const VERSUS_ROWS = [
   ["hand", "hand", "hand", "hand", "hand", "hand", "hand"],
 ];
 
-const LABELS: Record<ZoneId, string> = {
-  emzL: "EMZ",
-  emzR: "EMZ",
-  field: "FIELD",
-  gy: "GY",
-  banished: "BAN",
-  hand: "HAND",
-  m1: "M1",
-  m2: "M2",
-  m3: "M3",
-  m4: "M4",
-  m5: "M5",
-  st1: "S1",
-  st2: "S2",
-  st3: "S3",
-  st4: "S4",
-  st5: "S5",
-  oppHand: "HAND",
-  oppField: "FIELD",
-  oppGy: "GY",
-  oppBanished: "BAN",
-  oppM1: "M1",
-  oppM2: "M2",
-  oppM3: "M3",
-  oppM4: "M4",
-  oppM5: "M5",
-  oppSt1: "S1",
-  oppSt2: "S2",
-  oppSt3: "S3",
-  oppSt4: "S4",
-  oppSt5: "S5",
-};
+const GLOW_COLORS = ["#7f6df2", "#e2b340", "#3dba7a", "#e06b6b"];
 
 const FRAME_ICONS: Record<FrameType, string> = {
   activate: '<path d="M9 1.5 4.5 9h3.2L6.8 14.5 12 7H8.6z"/>',
@@ -481,7 +450,7 @@ function drawBoard(picture: BoardPicture, rows: string[][], lookup?: CardLookup)
     const value = picture[area];
     const pile = Array.isArray(value) ? value : null;
     const card = slotCard(picture, area);
-    const slot = card ? drawCard(card, pile ? pile.some((item) => item.glow) : card.glow, lookup) : drawEmpty(LABELS[area]);
+    const slot = card ? drawCard(card, shownGlow(card, pile), lookup) : drawEmpty(area);
     slot.style.gridArea = area;
     slot.dataset.zone = area;
     if (pile && pile.length > 1) {
@@ -500,17 +469,35 @@ function drawHand(picture: BoardPicture, zone: "hand" | "oppHand", lookup?: Card
   row.style.gridArea = zone;
   const cards = picture[zone];
   if (!cards.length) {
-    row.append(drawEmpty("HAND"));
+    row.append(drawEmpty(zone));
     return row;
   }
   for (const card of cards) row.append(drawCard(card, card.glow, lookup));
   return row;
 }
 
-function drawCard(card: CardView, glow: boolean, lookup?: CardLookup): HTMLElement {
+function shownGlow(card: CardView, pile: CardView[] | null): string | null {
+  if (!pile) return card.glow;
+  for (let index = pile.length - 1; index >= 0; index -= 1) {
+    if (pile[index].glow) return pile[index].glow;
+  }
+  return null;
+}
+
+function glowColor(kind: string): string {
+  if (!/^glow\d+$/.test(kind)) return "var(--ygo-accent)";
+  const number = Number(kind.slice(4));
+  if (number >= 1 && number <= GLOW_COLORS.length) return GLOW_COLORS[number - 1];
+  return `hsl(${(number * 47) % 360} 72% 62%)`;
+}
+
+function drawCard(card: CardView, glow: string | null, lookup?: CardLookup): HTMLElement {
   const slot = el("div", "ygo-slot is-filled");
   slot.dataset.ygoName = card.name;
-  if (glow) slot.classList.add("is-glow");
+  if (glow) {
+    slot.classList.add("is-glow");
+    slot.style.setProperty("--ygo-glow", glowColor(glow));
+  }
   if (card.set) {
     slot.classList.add("is-set");
     slot.title = card.name;
