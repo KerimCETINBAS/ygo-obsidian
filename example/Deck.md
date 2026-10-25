@@ -2,7 +2,6 @@
 
 ```ygo-deck
 # Deck
-# https://www.db.yugioh-card.com/yugiohdb/member_deck.action?ope=1&wname=MemberDeck&ytkn=b4c267be06f542695b7a7ca59e0aa3c0f6d1f2c96bd8de9003e2af579bc85df3&cgid=8ecda256d1c6454353dad980481bd31f&dno=2
 #main
 27520594
 27520594

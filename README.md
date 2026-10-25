@@ -49,8 +49,6 @@ npm run build
 
 `npm run build` writes the plugin to `dist/` and to `example/.obsidian/plugins/ygo-combo-builder/`.
 
-`npm run preview` builds the plugin and also copies it into `G:/viteria/Yugioh`.
-
 ## Release
 
 Push a tag that matches `version` in `manifest.json`. Leave off the `v` prefix.
