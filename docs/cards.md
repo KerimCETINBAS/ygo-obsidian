@@ -46,6 +46,10 @@ atk: 0
 def: 600
 ---
 
+%%
+Auto-generated. Do not edit.
+%%
+
 ## image
 
 ![[Sunseed Genius Loci.png]]
@@ -55,6 +59,6 @@ def: 600
 The effect, including every line after a summoning condition.
 ```
 
-The tooltip is the whole `## text` section. `link` is the Link rating. `level` is the Level or Rank. Leave either one empty when the card does not have it.
+The tooltip is the whole `## text` section. `link` is the Link rating. `level` is the Level or Rank. Leave either one empty when the card does not have it. The plugin writes `%% Auto-generated. Do not edit. %%` on the line after the frontmatter. That comment shows in edit mode and stays hidden in reading mode and in embeds.
 
 `example/Cards.md` places a note link and a picture next to each other. `example/Deck.md` is a full deck. `example/Opening.md` is a full combo.

@@ -88,7 +88,7 @@ export function renderCardNote(card: StoredCard): string {
     `atk: ${card.atk ?? ""}`,
     `def: ${card.def ?? ""}`,
   ];
-  return `---\n${fields.join("\n")}\n---\n\n## image\n\n![[${image}]]\n\n## text\n\n${card.desc}\n`;
+  return `---\n${fields.join("\n")}\n---\n\n%%\nAuto-generated. Do not edit.\n%%\n\n## image\n\n![[${image}]]\n\n## text\n\n${card.desc}\n`;
 }
 
 export function parseCardNote(text: string): StoredCard | null {

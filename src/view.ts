@@ -128,13 +128,18 @@ export function mountCombo(
   const counter = el("span", "ygo-counter");
   const say = el("strong", "ygo-caption-say");
   caption.append(counter, say);
+  const sayTip = el("div", "ygo-say-tip");
+  sayTip.hidden = true;
+  document.body.append(sayTip);
+  say.addEventListener("pointerenter", showSayTip);
+  say.addEventListener("pointerleave", hideSayTip);
 
   const modes = el("div", "ygo-modes");
   const modeButtons = (["list", "minimal", "board"] as const).map((id) => {
     const node = document.createElement("button");
     node.type = "button";
     node.className = "ygo-mode";
-    node.textContent = id === "list" ? "List" : id === "minimal" ? "Minimal" : "Full";
+    node.textContent = id === "list" ? "Small" : id === "minimal" ? "Large" : "Full";
     node.addEventListener("click", () => setMode(id));
     modes.append(node);
     return node;
@@ -144,14 +149,14 @@ export function mountCombo(
   const prev = navButton("‹", "Previous step");
   const next = navButton("›", "Next step");
   controls.append(prev, next);
-  bar.append(caption);
+  bar.append(caption, controls);
 
-  const now = el("div", "ygo-now");
-  const nowSay = el("strong", "");
-  const nowFrames = el("div", "");
-  now.append(nowSay, nowFrames);
   const stage = el("div", "ygo-stage");
-  preview.append(bar, now, stage);
+  const boardHost = el("div", "ygo-board-host");
+  stage.append(boardHost);
+  const boardTools = el("div", "ygo-board-tools");
+  boardTools.append(modes);
+  preview.append(boardTools, bar, stage);
 
   const tabs = el("div", "ygo-tabs");
   const tabSteps = modeButton("Steps");
@@ -160,10 +165,8 @@ export function mountCombo(
   tabSteps.addEventListener("click", () => setTab("steps"));
   tabBoard.addEventListener("click", () => setTab("board"));
 
-  const tools = el("div", "ygo-tools");
-  tools.append(modes, controls);
   const toolbar = el("div", "ygo-toolbar");
-  toolbar.append(tabs, tools);
+  toolbar.append(tabs);
 
   widget.append(list, preview);
   root.append(toolbar, widget);
@@ -215,6 +218,7 @@ export function mountCombo(
       destroyed = true;
       compact.disconnect();
       document.removeEventListener("keydown", onEscape);
+      sayTip.remove();
     },
     repaint() {
       if (!destroyed) show(index);
@@ -223,6 +227,25 @@ export function mountCombo(
       return index;
     },
   };
+
+  function showSayTip() {
+    const full = say.textContent ?? "";
+    if (!full || say.scrollWidth <= say.clientWidth + 1) {
+      hideSayTip();
+      return;
+    }
+    sayTip.textContent = full;
+    sayTip.hidden = false;
+    const rect = say.getBoundingClientRect();
+    const tipWidth = Math.min(420, sayTip.offsetWidth || 420);
+    const left = Math.min(Math.max(8, rect.left), window.innerWidth - tipWidth - 8);
+    sayTip.style.left = `${left}px`;
+    sayTip.style.top = `${rect.bottom + 6}px`;
+  }
+
+  function hideSayTip() {
+    sayTip.hidden = true;
+  }
 
   function onWidgetKey(event: KeyboardEvent) {
     if (destroyed) return;
@@ -264,7 +287,9 @@ export function mountCombo(
       node.classList.add(modeClass);
     }
     widget.classList.toggle("is-tab-board", tab === "board");
-    syncCardSize();
+    requestAnimationFrame(() => {
+      if (!destroyed) fitBoard();
+    });
     tabSteps.classList.toggle("is-on", tab === "steps");
     tabBoard.classList.toggle("is-on", tab === "board");
     modeButtons.forEach((button, buttonIndex) => {
@@ -274,33 +299,41 @@ export function mountCombo(
 
   function show(nextIndex: number) {
     if (destroyed || !pictures.length) return;
+    hideSayTip();
     index = Math.max(0, Math.min(pictures.length - 1, nextIndex));
     const step = doc.steps[index];
     counter.textContent = doc.steps.length ? `${index + 1} / ${doc.steps.length}` : "0 / 0";
     say.textContent = step?.say ?? "";
-    nowSay.textContent = step ? `${index + 1} / ${doc.steps.length}  ${step.say}` : "";
-    renderFrames(nowFrames, step?.frames ?? [], lookup);
     prev.disabled = index <= 0;
     next.disabled = index >= pictures.length - 1;
     stepButtons.forEach((item, itemIndex) => item.classList.toggle("is-active", itemIndex === index));
     const active = stepButtons[index];
     if (active) keepStepVisible(list, active);
-    stage.replaceChildren(drawBoard(pictures[index], rows, lookup));
-    syncCardSize();
+    boardHost.replaceChildren(drawBoard(pictures[index], rows, lookup));
+    fitBoard();
   }
 
-  function syncCardSize() {
-    const sample = stage.querySelector(".ygo-board > .ygo-slot");
-    const measured = sample?.getBoundingClientRect().width ?? 0;
-    const width = measured > 8 ? measured : fallbackCardWidth();
-    if (width > 8) root.style.setProperty("--ygo-card", `${Math.round(width)}px`);
+  function fitBoard() {
+    const board = boardHost.querySelector(".ygo-board");
+    if (!(board instanceof HTMLElement)) return;
+    const gap = readGap(board);
+    const columns = 7;
+    const rowCount = rows.length;
+    const availW = stage.clientWidth;
+    const availH = stage.clientHeight;
+    if (availW < 16 || availH < 16) return;
+    const cardHeightRatio = 86 / 59;
+    const fromWidth = (availW - gap * (columns - 1)) / columns;
+    const fromHeight = (availH - gap * (rowCount - 1)) / rowCount / cardHeightRatio;
+    const card = Math.max(12, Math.min(fromWidth, fromHeight));
+    board.style.width = `${Math.floor(card * columns + gap * (columns - 1))}px`;
+    root.style.setProperty("--ygo-card", `${Math.floor(card)}px`);
   }
+}
 
-  function fallbackCardWidth() {
-    const combo = widget.getBoundingClientRect().width || root.getBoundingClientRect().width;
-    const share = mode === "list" ? 0.7 / 2.15 : 0.72;
-    return Math.max(28, (combo * share - 24 - 36) / 7);
-  }
+function readGap(board: HTMLElement): number {
+  const gap = parseFloat(getComputedStyle(board).columnGap);
+  return Number.isFinite(gap) ? gap : 6;
 }
 
 function enableDragScroll(row: HTMLElement) {

@@ -52,12 +52,7 @@
       }
 
       .widget.is-board {
-        position: fixed;
-        inset: 16px;
-        z-index: 20;
-        height: auto;
         grid-template-columns: 1fr;
-        box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.62);
       }
 
       .widget.is-board .list { display: none; }
@@ -312,8 +307,8 @@
 
       .widget.is-minimal .board { width: min(100%, 760px); }
       .widget.is-minimal .board.is-versus { width: min(100%, 470px); }
-      .widget.is-board .board { width: min(100%, 760px); }
-      .widget.is-board .board.is-versus { width: min(100%, 620px); }
+      .widget.is-board .board,
+      .widget.is-board .board.is-versus { width: 100%; }
 
       .slot {
         position: relative;
@@ -413,7 +408,7 @@
 
         .widget.is-board {
           grid-template-rows: minmax(0, 1fr);
-          height: auto;
+          height: 740px;
         }
 
         .list { border-right: 0; border-bottom: 1px solid var(--line); }
@@ -423,7 +418,7 @@
   <body>
     <article>
       <h1>Sunavalon</h1>
-      <p>List is the main view. Minimal is a narrow list and a wide board. Full opens the board, with only the selected step above it.</p>
+      <p>Small keeps a small board beside the steps. Large gives the board most of the widget. Full hides the list and gives the board the whole widget.</p>
       <div id="sunavalon" class="widget"></div>
 
       <h2>Against a set board</h2>
@@ -734,8 +729,8 @@
         const modes = document.createElement("div");
         modes.className = "modes";
         const modeButtons = [
-          ["list", "List"],
-          ["minimal", "Minimal"],
+          ["list", "Small"],
+          ["minimal", "Large"],
           ["board", "Full"],
         ].map(([id, label]) => {
           const button = document.createElement("button");

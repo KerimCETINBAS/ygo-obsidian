@@ -44,9 +44,10 @@
   height: auto;
   min-height: 0;
   overflow: hidden;
-  border: 1px solid var(--ygo-line);
-  border-radius: 8px;
-  background: var(--ygo-bg);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  gap: 12px;
   color: var(--ygo-text);
 }
 
@@ -55,33 +56,13 @@
 }
 
 .ygo-toolbar {
-  display: flex;
+  display: none;
   align-items: center;
   gap: 8px;
   margin: 0 0 8px;
 }
 
-.ygo-host.is-board {
-  position: fixed;
-  inset: 16px;
-  z-index: 40;
-  display: flex;
-  flex-direction: column;
-  padding: 12px;
-  border-radius: 8px;
-  background: var(--background-primary, #1e1e1e);
-  box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.62);
-}
-
-.ygo-host.is-board .ygo-combo {
-  position: relative;
-  flex: 1;
-  width: 100%;
-  height: auto;
-  aspect-ratio: auto;
-  min-height: 0;
-  box-shadow: none;
-}
+.ygo-host.is-compact:not(.is-board) .ygo-toolbar { display: flex; }
 
 .ygo-combo.is-board {
   grid-template-columns: 1fr;
@@ -89,12 +70,6 @@
 
 .ygo-combo.is-board .ygo-list { display: none; }
 .ygo-combo.is-board .ygo-preview { height: 100%; }
-.ygo-combo.is-board .ygo-stage {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  justify-content: center;
-}
 
 .ygo-list,
 .ygo-preview {
@@ -105,7 +80,9 @@
 .ygo-list {
   overflow-x: hidden;
   overflow-y: auto;
-  border-right: 1px solid var(--ygo-line);
+  border: 1px solid var(--ygo-line);
+  border-radius: 8px;
+  background: var(--ygo-bg);
 }
 
 .ygo-list-title {
@@ -315,15 +292,20 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  overflow: auto;
+  overflow: hidden;
   padding: 12px;
 }
 
 .ygo-bar {
   display: flex;
-  flex-wrap: wrap;
+  flex: none;
   align-items: center;
   gap: 8px;
+  width: 100%;
+  height: 28px;
+  min-height: 28px;
+  max-height: 28px;
+  overflow: hidden;
 }
 
 .ygo-tools {
@@ -336,14 +318,24 @@
 
 .ygo-caption {
   display: flex;
+  flex: 1;
+  align-items: center;
   gap: 8px;
-  align-items: baseline;
   min-width: 0;
+  overflow: hidden;
 }
 
-.ygo-counter { color: var(--ygo-faint); font-size: 12px; font-variant-numeric: tabular-nums; }
+.ygo-counter {
+  flex: none;
+  color: var(--ygo-faint);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 
 .ygo-caption-say {
+  display: block;
+  flex: 1;
   min-width: 0;
   overflow: hidden;
   font-size: 14px;
@@ -351,8 +343,27 @@
   white-space: nowrap;
 }
 
-.ygo-combo.is-board .ygo-caption { display: none; }
-.ygo-modes { display: flex; gap: 4px; }
+.ygo-say-tip {
+  position: fixed;
+  z-index: 80;
+  max-width: min(420px, calc(100vw - 16px));
+  padding: 6px 8px;
+  border: 1px solid var(--background-modifier-border, rgba(255, 255, 255, 0.16));
+  border-radius: 6px;
+  background: var(--background-secondary, #262626);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  color: var(--text-normal, #dcddde);
+  font-size: 13px;
+  line-height: 1.35;
+  pointer-events: none;
+  white-space: normal;
+}
+
+.ygo-say-tip[hidden] { display: none; }
+
+.ygo-board-tools { display: flex; flex: none; }
+.ygo-modes { display: flex; flex: none; gap: 4px; }
+.ygo-bar .ygo-modes { margin-left: auto; }
 
 .ygo-host button.ygo-mode,
 .ygo-host button.ygo-nav {
@@ -373,24 +384,27 @@
 .ygo-mode.is-on { border-color: var(--ygo-accent); color: var(--ygo-text); }
 .ygo-nav { width: 28px; color: inherit; }
 .ygo-nav:disabled { opacity: 0.35; cursor: default; }
-.ygo-now { display: none; }
-.ygo-combo.is-board .ygo-now { display: block; }
-.ygo-now strong { display: block; font-size: 15px; }
-.ygo-stage { flex: 1; min-height: 0; }
+.ygo-stage {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
 
 .ygo-board {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: var(--ygo-gap);
   align-items: start;
-  width: 100%;
+  width: auto;
+  max-width: 100%;
   margin: 0 auto;
 }
 
-.ygo-combo.is-minimal .ygo-board { width: min(100%, 760px); }
-.ygo-combo.is-minimal .ygo-board.is-versus { width: min(100%, 470px); }
-.ygo-combo.is-board .ygo-board { width: min(100%, 760px); }
-.ygo-combo.is-board .ygo-board.is-versus { width: min(100%, 620px); }
+.ygo-board-host { min-width: 0; min-height: 0; }
 
 .ygo-slot.is-filled { pointer-events: auto; }
 
@@ -489,7 +503,6 @@
   grid-template-rows: minmax(0, 1fr);
 }
 
-.ygo-combo.is-compact:not(.is-board) .ygo-list { border-right: 0; }
 .ygo-combo.is-compact:not(.is-board):not(.is-tab-board) .ygo-preview { display: none; }
 .ygo-combo.is-compact:not(.is-board).is-tab-board .ygo-list { display: none; }
 

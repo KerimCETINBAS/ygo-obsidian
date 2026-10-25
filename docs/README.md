@@ -40,9 +40,9 @@ If a step has frames, its `lines` stay hidden. A step with no frames shows `line
 
 ## Views
 
-**List** is the default: steps on the left, board on the right. **Minimal** keeps the current step and the board. **Full** fills the window. Escape returns to List.
+**Small** is the default: steps on the left and a small board on the right. **Large** gives most of the widget to the board. **Full** hides the step list and gives the board the whole widget. The three buttons sit at the top of the board. Escape returns to Small.
 
-When the note is narrower than 640px, List and Minimal switch to **Steps** and **Board** tabs.
+When the note is narrower than 640px, Small and Large switch to **Steps** and **Board** tabs.
 
 While the cursor is inside the block, Live Preview shows the source instead of the board.
 

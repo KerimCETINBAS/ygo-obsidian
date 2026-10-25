@@ -20,7 +20,7 @@ Show the vault in this order.
 4. Open [[Cards]]. `[[Card Name]]` opens the card note. `![[Card Name.png]]` is only the picture.
 5. The command **Insert combo** pastes a short sample. **Insert deck** pastes a short deck. The setting **Card folder** defaults to `cards`.
 
-The widget has three views: **List**, **Minimal**, and **Full**. Escape leaves Full and returns to List. Below 640px, List and Minimal become **Steps** and **Board** tabs. While the cursor is inside a fence, Live Preview hides the widget and shows the source.
+The widget has three board sizes: **Small**, **Large**, and **Full**. Small keeps a small board beside the steps. Large gives the board most of the widget. Full hides the step list and gives the board the whole widget. The buttons are at the top of the board. Escape leaves Full and returns to Small. Below 640px, Small and Large become **Steps** and **Board** tabs. While the cursor is inside a fence, Live Preview hides the widget and shows the source.
 
 ### write-deck
 

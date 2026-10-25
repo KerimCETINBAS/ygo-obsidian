@@ -122,6 +122,7 @@ assert.equal(parsedNote?.desc, "A seed.");
 const linkText = "1 Plant monster\nIf this card is Link Summoned: You can add 1 card.";
 const linkNote = renderCardNote({ ...parsedNote!, desc: linkText, type: "Link Monster", linkval: 1 });
 assert.equal(parseCardNote(linkNote)?.desc, linkText);
+assert.ok(note.includes("\n---\n\n%%\nAuto-generated. Do not edit.\n%%\n\n## image\n"));
 assert.ok(note.includes("## image\n\n![[Sunseed Genius Loci.png]]"));
 assert.ok(note.includes("## text\n\nA seed."));
 
